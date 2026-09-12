@@ -1,3 +1,5 @@
+VERSÃO 3.2 — LOGO CAHK CORRIGIDA
+
 # Portal CAHK — v3 responsivo
 
 Portal unificado do Centro Acadêmico Hugo Kremer.
