@@ -1,1 +1,275 @@
-<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=../radio/admin.html"><script>location.replace('../radio/admin.html')</script><title>Redirecionando…</title>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rádio CAHK — Programação</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="/assets/cahk-subpages-v4.css?v=4.0">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+</head>
+<body class="radio-admin-minimal">
+<header class="cahk-subheader"><div class="cahk-subheader-inner"><a class="cahk-subbrand" href="/"><img src="/assets/cahk-logo-v32.png?v=4" alt="CAHK"></a><nav class="cahk-subnav"><a class="cahk-back" href="/">Portal</a><a href="/radio/">Rádio</a><a href="/loja/">Loja</a><a class="hide-mobile" href="/#eventos">Eventos</a><a class="hide-mobile" href="/#contatos">Contatos</a></nav></div></header>
+<main class="shell admin">
+<header class="hero"><span class="pill">ADMINISTRAÇÃO</span><h1>PROGRAMAÇÃO</h1><p>Controle músicas, locuções e os áudios enviados pela galera.</p></header>
+
+<section id="login" class="card login-card">
+  <h2>Acesso administrativo</h2>
+  <div class="stack"><input id="token" type="password" placeholder="Código administrativo"><button id="enter" class="primary">Entrar</button><div id="loginMsg" class="muted"></div></div>
+</section>
+
+<div id="panel" class="hidden">
+  <div class="admin-grid">
+    <section class="card">
+      <h2>Configuração da rádio</h2>
+      <form id="cfg" class="form-grid">
+        <label class="span2">Nome<input id="stationName"></label>
+        <label class="check span2"><input id="autoMode" type="checkbox">Programação automática</label>
+        <label class="check span2"><input id="annsEnabled" type="checkbox">Locuções automáticas</label>
+        <label>Locução a cada<input id="every" type="number" min="1" max="20"></label><label>faixas<input value="músicas" disabled></label>
+        <label class="check span2"><input id="communityEnabled" type="checkbox">Áudios da galera</label>
+        <label>Áudio da galera a cada<input id="communityEvery" type="number" min="1" max="50"></label><label>faixas<input value="músicas" disabled></label>
+        <label>Velocidade da voz<input id="rate" type="number" min=".5" max="2" step=".05"></label>
+        <label>Tom da voz<input id="pitch" type="number" min=".5" max="2" step=".05"></label>
+        <label class="span2">Voz preferida<select id="voice"><option value="">Automática</option></select></label>
+        <button class="primary span2">Salvar configuração</button>
+      </form>
+      <hr class="soft-rule">
+      <button id="refresh" class="ghost full">Atualizar Top Música do YouTube</button>
+      <div id="refreshMsg" class="status muted small"></div><div id="trackMetric"></div>
+    </section>
+
+    <section class="card">
+      <h2>Nova locução</h2>
+      <form id="annForm" class="form-grid">
+        <input id="annId" type="hidden">
+        <label class="span2">Nome interno<input id="annTitle" placeholder="Ex.: Coca gelada"></label>
+        <label>Tipo<select id="annType"><option value="station">Vinheta</option><option value="product">Produto</option><option value="event">Evento</option><option value="custom">Outro</option></select></label>
+        <label>Prioridade<input id="annPriority" type="number" value="0"></label>
+        <label class="span2">Texto<textarea id="annText" placeholder="Ex.: Passando pelo CAHK? Tem Coca gelada por quatro reais."></textarea></label>
+        <label class="span2">URL de áudio (opcional)<input id="audioUrl" placeholder="Se deixar vazio, usa a voz do navegador"></label>
+        <label class="check span2"><input id="annActive" type="checkbox" checked>Ativa</label>
+        <div class="row span2"><button class="primary" type="submit">Salvar locução</button><button class="ghost" id="clear" type="button">Limpar</button></div>
+      </form>
+    </section>
+  </div>
+
+
+  <section class="card">
+    <div class="section-title-row">
+      <div><span class="pill">⏰ TODO DIA</span><h2>Áudio diário</h2></div>
+      <span class="counter-badge">HORÁRIO EXATO</span>
+    </div>
+    <p class="muted small">Escolha apenas o horário. Esse áudio tocará todos os dias nesse horário, pausando o que estiver tocando e retomando a programação depois.</p>
+    <form id="scheduledForm" class="form-grid scheduled-form">
+      <label class="span2">Nome do áudio<input id="scheduledTitle" maxlength="120" placeholder="Ex.: Aviso de fechamento"></label>
+      <label class="span2">Arquivo de áudio<input id="scheduledFile" type="file" accept="audio/*"></label>
+      <label class="span2">Horário diário<input id="scheduledWhen" type="time" step="1"></label>
+      <div class="span2 row"><button class="primary" type="submit">Salvar áudio diário</button><span id="scheduledMsg" class="status muted small"></span></div>
+    </form>
+    <hr class="soft-rule">
+    <h3>Áudios que tocam todos os dias</h3>
+    <div id="scheduledList"><div class="muted">Carregando…</div></div>
+  </section>
+
+  <section class="card">
+    <div class="section-title-row"><div><span class="pill">🎙 MODERAÇÃO</span><h2>Áudios da galera</h2></div><span id="pendingCount" class="counter-badge">0 pendentes</span></div>
+    <p class="muted small">Escute antes de aprovar. Só os aprovados e ativos podem entrar na programação automática.</p>
+    <div class="audio-admin-tabs">
+      <button class="ghost active-tab" data-audio-filter="pending">Pendentes</button>
+      <button class="ghost" data-audio-filter="approved">Aprovados</button>
+      <button class="ghost" data-audio-filter="rejected">Rejeitados</button>
+    </div>
+    <div id="communityAudios"></div>
+  </section>
+
+  <section class="card"><h2>Locuções cadastradas</h2><div id="anns"></div></section>
+</div>
+</main>
+
+<script>
+const C=window.RADIO_CONFIG,$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let state={config:{},announcements:[],tracks:[],audios:[]};
+let scheduledItems=[];
+let audioFilter='pending';
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function token(){return $('#token').value.trim()}
+async function api(body){const r=await fetch(`${C.SUPABASE_URL}/functions/v1/radio-admin`,{method:'POST',headers:{'Content-Type':'application/json','apikey':C.SUPABASE_PUBLISHABLE_KEY,'x-admin-token':token()},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error||'Erro');return j}
+function fmtDate(v){if(!v)return '';try{return new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(v))}catch{return ''}}
+function formatBytes(n){n=Number(n||0);return n<1024?`${n} B`:n<1048576?`${(n/1024).toFixed(0)} KB`:`${(n/1048576).toFixed(1)} MB`}
+function loadVoices(){const current=state.config.preferred_voice||'';const voices=speechSynthesis.getVoices().filter(v=>/^pt(-|_)/i.test(v.lang));$('#voice').innerHTML='<option value="">Automática</option>'+voices.map(v=>`<option ${current&&v.name.includes(current)?'selected':''} value="${esc(v.name)}">${esc(v.name)} — ${esc(v.lang)}</option>`).join('')}
+speechSynthesis.onvoiceschanged=loadVoices;
+
+
+async function scheduledApi(body){
+  const r=await fetch(`${C.SUPABASE_URL}/functions/v1/radio-scheduled-admin`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':C.SUPABASE_PUBLISHABLE_KEY,'x-admin-token':token()},
+    body:JSON.stringify(body)
+  });
+  const j=await r.json();
+  if(!r.ok)throw new Error(j.error||'Erro');
+  return j;
+}
+function defaultScheduledTime(){
+  if($('#scheduledWhen').value)return;
+  const d=new Date(Date.now()+5*60*1000);
+  d.setSeconds(0,0);
+  const pad=n=>String(n).padStart(2,'0');
+  $('#scheduledWhen').value=`${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+}
+function fmtDailyTime(v){
+  if(!v)return '--:--';
+  const p=String(v).split(':');
+  return `${p[0]?.padStart(2,'0')||'00'}:${p[1]?.padStart(2,'0')||'00'}${p[2]&&p[2]!=='00'?`:${p[2]}`:''}`;
+}
+async function loadScheduled(){
+  const j=await scheduledApi({action:'list'});
+  scheduledItems=j.items||[];
+  renderScheduled();
+}
+function scheduledStatus(x){
+  return x.active&&!x.cancelled_at?'ATIVO':'PAUSADO';
+}
+function renderScheduled(){
+  const items=[...scheduledItems].sort((a,b)=>String(a.daily_time||'').localeCompare(String(b.daily_time||'')));
+  $('#scheduledList').innerHTML=items.length?items.map(x=>{
+    const status=scheduledStatus(x);
+    return `<div class="item scheduled-item">
+      <div>
+        <span class="pill">${status}</span>
+        <strong class="block-title">${esc(x.title)}</strong>
+        <div class="scheduled-time">Todos os dias às ${fmtDailyTime(x.daily_time)}</div>
+        <div class="muted small">Próxima reprodução: ${fmtDate(x.scheduled_for) || 'calculando…'}</div>
+        ${x.audio_url?`<audio controls preload="none" src="${esc(x.audio_url)}"></audio>`:''}
+        <div class="muted small">${x.duration_seconds?`${x.duration_seconds}s • `:''}${formatBytes(x.file_size)} • tocou ${x.play_count||0} vez(es)${x.last_played_at?` • última ${fmtDate(x.last_played_at)}`:''}</div>
+      </div>
+      <div class="actions">
+        ${x.active&&!x.cancelled_at?`<button class="danger" data-sched-cancel="${x.id}">Pausar</button>`:`<button class="primary" data-sched-activate="${x.id}">Ativar</button>`}
+        <button class="ghost" data-sched-move="${x.id}">Alterar horário</button>
+      </div>
+    </div>`;
+  }).join(''):'<div class="muted empty-state">Nenhum áudio diário cadastrado.</div>';
+  $$('[data-sched-cancel]').forEach(b=>b.onclick=async()=>{if(!confirm('Pausar este áudio diário?'))return;try{await scheduledApi({action:'cancel',id:b.dataset.schedCancel});await loadScheduled()}catch(e){alert(e.message)}});
+  $$('[data-sched-activate]').forEach(b=>b.onclick=async()=>{try{await scheduledApi({action:'activate',id:b.dataset.schedActivate});await loadScheduled()}catch(e){alert(e.message)}});
+  $$('[data-sched-move]').forEach(b=>b.onclick=async()=>{
+    const item=scheduledItems.find(x=>x.id===b.dataset.schedMove); if(!item)return;
+    const value=prompt('Novo horário diário (HH:MM ou HH:MM:SS):',String(item.daily_time||'').slice(0,8)); if(!value)return;
+    const ok=/^(?:[01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value.trim());
+    if(!ok)return alert('Horário inválido. Use HH:MM ou HH:MM:SS.');
+    try{await scheduledApi({action:'reschedule',id:item.id,daily_time:value.trim()});await loadScheduled()}catch(e){alert(e.message)}
+  });
+}
+async function audioDuration(file){
+  return new Promise(resolve=>{
+    const u=URL.createObjectURL(file),a=new Audio();
+    const done=v=>{URL.revokeObjectURL(u);resolve(v)};
+    a.preload='metadata'; a.onloadedmetadata=()=>done(Math.round(a.duration||0)); a.onerror=()=>done(0); a.src=u;
+  });
+}
+
+async function load(){
+  state=await api({action:'list'});
+  const c=state.config||{};
+  $('#stationName').value=c.station_name||'';
+  $('#autoMode').checked=!!c.auto_mode;
+  $('#annsEnabled').checked=!!c.announcements_enabled;
+  $('#every').value=c.announcement_every_tracks||4;
+  $('#communityEnabled').checked=c.community_audio_enabled!==false;
+  $('#communityEvery').value=c.community_audio_every_tracks||5;
+  $('#rate').value=c.speech_rate||1;
+  $('#pitch').value=c.speech_pitch||1;
+  loadVoices();
+  renderAnnouncements();
+  renderAudios();
+  $('#trackMetric').innerHTML=`<div class="metric-card"><span class="muted small">Faixas automáticas carregadas</span><h2>${state.tracks?.length||0}</h2></div>`;
+  defaultScheduledTime();
+  await loadScheduled();
+}
+
+function renderAnnouncements(){
+  $('#anns').innerHTML=state.announcements?.length?state.announcements.map(a=>`<div class="item"><div><span class="pill">${esc(a.type)}</span><strong class="block-title">${esc(a.title)}</strong><div class="muted">${esc(a.text)}</div><div class="small muted">Prioridade ${a.priority} • ${a.active?'ativa':'desativada'}${a.audio_url?' • áudio próprio':''}</div></div><div class="actions"><button class="ghost" data-edit="${a.id}">Editar</button><button class="danger" data-del="${a.id}">Excluir</button></div></div>`).join(''):'<div class="muted">Nenhuma locução cadastrada.</div>';
+  $$('[data-edit]').forEach(b=>b.onclick=()=>editAnnouncement(b.dataset.edit));
+  $$('[data-del]').forEach(b=>b.onclick=()=>deleteAnnouncement(b.dataset.del));
+}
+
+function renderAudios(){
+  const all=state.audios||[];
+  const pending=all.filter(a=>a.status==='pending').length;
+  $('#pendingCount').textContent=`${pending} pendente${pending===1?'':'s'}`;
+  const items=all.filter(a=>a.status===audioFilter);
+  $('#communityAudios').innerHTML=items.length?items.map(a=>`
+    <article class="community-admin-item">
+      <div class="community-admin-main">
+        <div class="community-admin-heading">
+          <div><span class="pill">${a.status==='pending'?'AGUARDANDO':a.status==='approved'?(a.active?'ATIVO':'PAUSADO'):'REJEITADO'}</span><strong>${esc(a.display_name)}</strong></div>
+          <span class="muted small">${fmtDate(a.created_at)}</span>
+        </div>
+        ${a.audio_url?`<audio controls preload="none" src="${esc(a.audio_url)}"></audio>`:'<div class="muted">Prévia indisponível.</div>'}
+        <div class="muted small">${a.duration_seconds}s • ${formatBytes(a.file_size)} • tocou ${a.play_count||0} vez(es)</div>
+        ${a.rejection_reason?`<div class="reject-reason">Motivo: ${esc(a.rejection_reason)}</div>`:''}
+      </div>
+      <div class="actions audio-actions">
+        ${a.status==='pending'?`<button class="primary" data-approve="${a.id}">✓ Aprovar</button><button class="danger" data-reject="${a.id}">✕ Rejeitar</button>`:''}
+        ${a.status==='approved'?`<button class="ghost" data-toggle="${a.id}" data-active="${a.active?'0':'1'}">${a.active?'Pausar':'Ativar'}</button>`:''}
+        <button class="danger" data-audio-delete="${a.id}">Excluir</button>
+      </div>
+    </article>`).join(''):`<div class="muted empty-state">Nenhum áudio ${audioFilter==='pending'?'aguardando aprovação':audioFilter==='approved'?'aprovado':'rejeitado'}.</div>`;
+
+  $$('[data-approve]').forEach(b=>b.onclick=()=>audioAction('approve_audio',b.dataset.approve));
+  $$('[data-reject]').forEach(b=>b.onclick=async()=>{const reason=prompt('Motivo da rejeição (opcional):')||'';await audioAction('reject_audio',b.dataset.reject,{reason})});
+  $$('[data-toggle]').forEach(b=>b.onclick=()=>audioAction('update_audio',b.dataset.toggle,{active:b.dataset.active==='1'}));
+  $$('[data-audio-delete]').forEach(b=>b.onclick=async()=>{if(confirm('Excluir definitivamente este áudio?'))await audioAction('delete_audio',b.dataset.audioDelete)});
+}
+
+async function audioAction(action,id,extra={}){try{await api({action,id,...extra});await load()}catch(e){alert(e.message)}}
+
+$$('[data-audio-filter]').forEach(btn=>btn.onclick=()=>{audioFilter=btn.dataset.audioFilter;$$('[data-audio-filter]').forEach(x=>x.classList.toggle('active-tab',x===btn));renderAudios()});
+
+function editAnnouncement(id){const a=state.announcements.find(x=>x.id===id);$('#annId').value=a.id;$('#annTitle').value=a.title;$('#annType').value=a.type;$('#annPriority').value=a.priority;$('#annText').value=a.text;$('#audioUrl').value=a.audio_url||'';$('#annActive').checked=a.active;window.scrollTo({top:0,behavior:'smooth'})}
+function clearAnnouncement(){$('#annForm').reset();$('#annId').value='';$('#annPriority').value='0';$('#annActive').checked=true}
+$('#clear').onclick=clearAnnouncement;
+
+$('#enter').onclick=async()=>{localStorage.setItem('radioCahkAdmin',token());$('#loginMsg').textContent='Validando…';try{await load();$('#login').classList.add('hidden');$('#panel').classList.remove('hidden')}catch(e){$('#loginMsg').textContent=e.message}};
+
+$('#cfg').onsubmit=async e=>{e.preventDefault();try{await api({action:'save_config',config:{station_name:$('#stationName').value,auto_mode:$('#autoMode').checked,announcements_enabled:$('#annsEnabled').checked,announcement_every_tracks:Number($('#every').value),community_audio_enabled:$('#communityEnabled').checked,community_audio_every_tracks:Number($('#communityEvery').value),preferred_voice:$('#voice').value||null,speech_rate:Number($('#rate').value),speech_pitch:Number($('#pitch').value)}});await load();alert('Configuração salva.')}catch(e){alert(e.message)}};
+
+$('#annForm').onsubmit=async e=>{e.preventDefault();const id=$('#annId').value,a={title:$('#annTitle').value,text:$('#annText').value,type:$('#annType').value,priority:Number($('#annPriority').value)||0,audio_url:$('#audioUrl').value.trim()||null,active:$('#annActive').checked};try{await api(id?{action:'update_announcement',id,announcement:a}:{action:'create_announcement',announcement:a});clearAnnouncement();await load()}catch(e){alert(e.message)}};
+async function deleteAnnouncement(id){if(!confirm('Excluir esta locução?'))return;try{await api({action:'delete_announcement',id});await load()}catch(e){alert(e.message)}}
+$('#refresh').onclick=async()=>{$('#refreshMsg').textContent='Consultando YouTube…';try{const j=await api({action:'refresh_top'});$('#refreshMsg').textContent=`Atualizado: ${j.count} faixas elegíveis.`;await load()}catch(e){$('#refreshMsg').textContent=e.message}};
+
+
+$('#scheduledForm').onsubmit=async e=>{
+  e.preventDefault();
+  const file=$('#scheduledFile').files?.[0];
+  const title=$('#scheduledTitle').value.trim();
+  const value=$('#scheduledWhen').value;
+  if(!title)return $('#scheduledMsg').textContent='Digite um nome.';
+  if(!file)return $('#scheduledMsg').textContent='Escolha o arquivo de áudio.';
+  if(file.size>3*1024*1024)return $('#scheduledMsg').textContent='O arquivo deve ter no máximo 3 MB.';
+  if(!value)return $('#scheduledMsg').textContent='Escolha o horário.';
+  $('#scheduledMsg').textContent='Enviando e salvando…';
+  try{
+    const duration=await audioDuration(file);
+    const fd=new FormData();
+    fd.append('title',title);
+    fd.append('daily_time',value);
+    fd.append('duration_seconds',String(duration||0));
+    fd.append('file',file,file.name);
+    const r=await fetch(`${C.SUPABASE_URL}/functions/v1/radio-scheduled-upload`,{
+      method:'POST',
+      headers:{'apikey':C.SUPABASE_PUBLISHABLE_KEY,'x-admin-token':token()},
+      body:fd
+    });
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error||'Erro ao salvar');
+    $('#scheduledMsg').textContent=`Salvo. Vai tocar todos os dias às ${fmtDailyTime(value)}.`;
+    $('#scheduledTitle').value=''; $('#scheduledFile').value=''; $('#scheduledWhen').value='';
+    defaultScheduledTime();
+    await loadScheduled();
+  }catch(err){$('#scheduledMsg').textContent=err.message}
+};
+
+const saved=localStorage.getItem('radioCahkAdmin');if(saved)$('#token').value=saved;
+</script>
+</body></html>

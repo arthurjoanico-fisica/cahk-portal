@@ -6,17 +6,18 @@
   <title>CaixaFlex 2</title>
   <meta name="theme-color" content="#0e1116">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="/assets/cahk-subpages-v4.css?v=4.0">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
 </head>
-<body>
+<body class="management-minimal">
   <div id="toast"></div>
 
   <section id="loginView" class="login-page">
     <div class="login-card">
-      <div class="logo-mark">CF</div>
-      <h1>CaixaFlex 2</h1>
-      <p class="muted">PDV • Estoque • Fiado • Relatórios</p>
+      <img class="management-logo" src="/assets/cahk-logo-v32.png?v=4" alt="CAHK">
+      <h1>Gestão CAHK</h1>
+      <p class="muted">Caixa • Encomendas • Estoque • Relatórios</p>
       <form id="loginForm" class="stack">
         <label>E-mail<input id="loginEmail" type="email" autocomplete="username" required></label>
         <label>Senha<input id="loginPassword" type="password" autocomplete="current-password" required></label>
@@ -29,8 +30,8 @@
   <div id="appView" class="app hidden">
     <aside class="sidebar">
       <div class="brand">
-        <div class="logo-mark small-logo">CF</div>
-        <div><strong>CaixaFlex 2</strong><span id="companyMini">CAHK</span></div>
+        <img class="sidebar-brand-logo" src="/assets/cahk-logo-v32.png?v=4" alt="CAHK">
+        <div><strong>Gestão CAHK</strong><span id="companyMini">Área restrita</span></div>
       </div>
       <nav id="nav">
         <button data-view="pdv" class="active">Balcão / PDV</button>
@@ -47,6 +48,7 @@
       <div class="sidebar-footer">
         <div id="userName"></div>
         <div id="userRole" class="muted small"></div>
+        <a class="management-portal-link" href="/">Voltar ao portal</a>
         <button id="logoutBtn" class="ghost full">Sair</button>
       </div>
     </aside>

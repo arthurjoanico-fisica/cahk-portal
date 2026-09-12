@@ -1,1 +1,414 @@
-<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=../radio/"><script>location.replace('../radio/')</script><title>Redirecionando…</title>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rádio CAHK</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="/assets/cahk-subpages-v4.css?v=4.0">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+</head>
+<body class="radio-minimal">
+<header class="cahk-subheader"><div class="cahk-subheader-inner"><a class="cahk-subbrand" href="/"><img src="/assets/cahk-logo-v32.png?v=4" alt="CAHK"></a><nav class="cahk-subnav"><a class="cahk-back" href="/">Portal</a><a href="/radio/">Rádio</a><a href="/loja/">Loja</a><a class="hide-mobile" href="/#eventos">Eventos</a><a class="hide-mobile" href="/#contatos">Contatos</a></nav></div></header>
+<div class="bg">E = mc² &nbsp; F = ma &nbsp; ∇·E = ρ/ε₀ &nbsp; ΔxΔp ≥ ħ/2 &nbsp; E = hf &nbsp; v = λf<br>∮B·dl = μ₀I &nbsp; p = mv &nbsp; U = ½kx² &nbsp; ω = 2πf &nbsp; P = W/Δt</div>
+<main class="shell">
+  <header class="hero">
+    <span class="pill">NO AR • CENTRO ACADÊMICO HUGO KREMER</span>
+    <h1>RÁDIO CAHK</h1>
+    <p>Você escolhe. A rádio continua.</p>
+  </header>
+
+  <div class="toplinks">
+    <a href="player.html">Player da sala</a>
+    <a href="admin.html">Programação</a>
+  </div>
+
+  <section class="card">
+    <h2>Pesquisar no YouTube</h2>
+    <div class="row">
+      <input id="searchText" placeholder="Ex.: Charlie Brown Jr. Céu Azul" autocomplete="off">
+      <button class="primary" id="searchBtn">Buscar</button>
+    </div>
+    <div class="status muted" id="searchMsg"></div>
+    <div id="searchResults" class="search-results"></div>
+  </section>
+
+  <div class="separator"><span>ou</span></div>
+
+  <section class="card">
+    <h2>Colar link do YouTube</h2>
+    <div class="row">
+      <input id="url" placeholder="https://youtube.com/watch?v=...">
+      <button class="primary" id="add">Adicionar à fila</button>
+    </div>
+    <div class="status muted" id="msg"></div>
+  </section>
+
+  <div class="separator"><span>participe da rádio</span></div>
+
+  <section class="card recorder-card">
+    <div class="recorder-head">
+      <div>
+        <span class="pill">🎙 ÁUDIO DA GALERA</span>
+        <h2>Grave um recado</h2>
+        <p class="muted">Até 20 segundos. Depois do envio, o áudio passa pela aprovação do CAHK antes de tocar.</p>
+      </div>
+      <div id="recordTimer" class="record-timer">00:00</div>
+    </div>
+
+    <div class="form-grid recorder-form">
+      <label class="span2">Nome ou apelido
+        <input id="audioName" maxlength="40" placeholder="Como você quer aparecer na rádio?" autocomplete="nickname">
+      </label>
+
+      <div class="span2 record-stage" id="recordStage">
+        <div id="recordIcon" class="record-icon">🎙</div>
+        <strong id="recordState">Pronto para gravar</strong>
+        <div id="recordBars" class="record-bars" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+      </div>
+
+      <div class="span2 recorder-actions">
+        <button class="primary" type="button" id="recordBtn">🎙 Gravar</button>
+        <button class="ghost hidden" type="button" id="stopBtn">■ Parar</button>
+        <button class="ghost hidden" type="button" id="redoBtn">↻ Gravar novamente</button>
+      </div>
+
+      <div class="span2 hidden" id="previewWrap">
+        <div class="preview-box">
+          <strong>Seu recado</strong>
+          <audio id="audioPreview" controls></audio>
+        </div>
+      </div>
+
+      <label class="check span2 consent-line">
+        <input id="audioConsent" type="checkbox">
+        Confirmo que posso enviar este áudio e autorizo sua reprodução pela Rádio CAHK.
+      </label>
+
+      <button class="primary span2 hidden" type="button" id="sendAudioBtn">Enviar para aprovação</button>
+      <div class="status muted span2" id="audioMsg"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Tocando agora</h2>
+    <div id="now"><div class="muted">Carregando…</div></div>
+  </section>
+
+  <section class="card">
+    <h2>Próximos pedidos</h2>
+    <div id="queue"></div>
+    <p class="muted small">Quando não houver pedidos, a Rádio CAHK assume a programação automaticamente.</p>
+  </section>
+</main>
+
+<script>
+const C=window.RADIO_CONFIG;
+const sb=supabase.createClient(C.SUPABASE_URL,C.SUPABASE_PUBLISHABLE_KEY);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const fmtDuration=(sec)=>{
+  sec=Number(sec||0);
+  if(!sec) return '';
+  const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+  return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`;
+};
+
+async function load(){
+  const {data,error}=await sb.from('queue').select('*').in('status',['playing','queued']).order('position',{ascending:true}).order('created_at',{ascending:true});
+  if(error)return;
+
+  const playing=data.find(x=>x.status==='playing');
+  const queued=data.filter(x=>x.status==='queued' && x.source!=='auto');
+
+  document.querySelector('#now').innerHTML=playing?`
+    <div class="now">
+      <img class="thumb" src="${esc(playing.thumbnail)}">
+      <div>
+        <span class="pill">${playing.source==='auto'?'PROGRAMAÇÃO DA RÁDIO':'PEDIDO'}</span>
+        <h3>${esc(playing.title)}</h3>
+        <div class="muted">${esc(playing.channel||'')}</div>
+      </div>
+    </div>`:
+    `<div class="muted">A rádio está preparando a próxima faixa.</div>`;
+
+  document.querySelector('#queue').innerHTML=queued.length?queued.map((x,i)=>`
+    <div class="queue-item">
+      <img src="${esc(x.thumbnail)}">
+      <div>
+        <strong>${i+1}. ${esc(x.title)}</strong>
+        <div class="muted small">${esc(x.channel||'')}</div>
+      </div>
+      <span class="pill">PEDIDO</span>
+    </div>`).join(''):
+    `<div class="muted">Nenhum pedido na fila — programação automática ativa.</div>`;
+}
+
+async function addUrl(url, button=null){
+  const clean=String(url||'').trim();
+  if(!clean) throw new Error('Link inválido.');
+
+  if(button){
+    button.disabled=true;
+    button.textContent='Adicionando...';
+  }
+
+  try{
+    const r=await fetch(`${C.SUPABASE_URL}/functions/v1/queue-add`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':C.SUPABASE_PUBLISHABLE_KEY},
+      body:JSON.stringify({url:clean})
+    });
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.error||'Não foi possível adicionar.');
+    await load();
+    return j;
+  } finally {
+    if(button){
+      button.disabled=false;
+      button.textContent='Adicionar à fila';
+    }
+  }
+}
+
+document.querySelector('#add').onclick=async()=>{
+  const input=document.querySelector('#url');
+  const msg=document.querySelector('#msg');
+  if(!input.value.trim()){msg.textContent='Cole um link do YouTube.';return;}
+  msg.textContent='Adicionando…';
+  try{
+    await addUrl(input.value,document.querySelector('#add'));
+    input.value='';
+    msg.textContent='Pedido recebido. Ele entrou na fila da rádio.';
+  }catch(e){
+    msg.textContent=e.message;
+  }
+};
+
+async function searchYoutube(){
+  const q=document.querySelector('#searchText').value.trim();
+  const msg=document.querySelector('#searchMsg');
+  const results=document.querySelector('#searchResults');
+  const btn=document.querySelector('#searchBtn');
+
+  if(q.length<2){
+    msg.textContent='Digite pelo menos 2 caracteres.';
+    results.innerHTML='';
+    return;
+  }
+
+  btn.disabled=true;
+  btn.textContent='Buscando…';
+  msg.textContent='Pesquisando no YouTube…';
+  results.innerHTML='';
+
+  try{
+    const r=await fetch(`${C.SUPABASE_URL}/functions/v1/youtube-search`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':C.SUPABASE_PUBLISHABLE_KEY},
+      body:JSON.stringify({q})
+    });
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.error||'Não foi possível pesquisar.');
+
+    const items=j.results||[];
+    msg.textContent=items.length
+      ? `${items.length} resultado${items.length===1?'':'s'} encontrado${items.length===1?'':'s'}.`
+      : 'Nenhum resultado encontrado.';
+
+    results.innerHTML=items.map(v=>`
+      <article class="search-result">
+        <img src="${esc(v.thumbnail)}" alt="">
+        <div class="search-result-info">
+          <strong>${esc(v.title)}</strong>
+          <div class="muted small">${esc(v.channel||'')}${v.durationSeconds?` • ${fmtDuration(v.durationSeconds)}`:''}</div>
+        </div>
+        <button class="primary add-result" data-url="${esc(v.url)}">Adicionar à fila</button>
+      </article>
+    `).join('');
+
+    document.querySelectorAll('.add-result').forEach(button=>{
+      button.onclick=async()=>{
+        try{
+          await addUrl(button.dataset.url,button);
+          msg.textContent='Música adicionada à fila.';
+        }catch(e){
+          msg.textContent=e.message;
+        }
+      };
+    });
+  }catch(e){
+    msg.textContent=e.message;
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Buscar';
+  }
+}
+
+document.querySelector('#searchBtn').onclick=searchYoutube;
+document.querySelector('#searchText').addEventListener('keydown',e=>{
+  if(e.key==='Enter') searchYoutube();
+});
+
+// ------------------------------
+// Gravador de recados da comunidade
+// ------------------------------
+let recorder=null;
+let recordStream=null;
+let recordChunks=[];
+let recordedBlob=null;
+let recordedSeconds=0;
+let recordStartedAt=0;
+let recordInterval=null;
+let autoStopTimer=null;
+let previewUrl=null;
+const MAX_RECORD_SECONDS=20;
+const recordBtn=document.querySelector('#recordBtn');
+const stopBtn=document.querySelector('#stopBtn');
+const redoBtn=document.querySelector('#redoBtn');
+const sendAudioBtn=document.querySelector('#sendAudioBtn');
+const audioPreview=document.querySelector('#audioPreview');
+const previewWrap=document.querySelector('#previewWrap');
+const recordState=document.querySelector('#recordState');
+const recordTimer=document.querySelector('#recordTimer');
+const recordStage=document.querySelector('#recordStage');
+const audioMsg=document.querySelector('#audioMsg');
+
+function setTimer(sec){
+  recordTimer.textContent=`00:${String(Math.max(0,Math.min(MAX_RECORD_SECONDS,sec))).padStart(2,'0')}`;
+}
+function cleanupStream(){
+  if(recordStream){ recordStream.getTracks().forEach(t=>t.stop()); recordStream=null; }
+}
+function clearTimers(){
+  clearInterval(recordInterval); clearTimeout(autoStopTimer); recordInterval=null; autoStopTimer=null;
+}
+function resetRecording(){
+  if(recorder && recorder.state==='recording') recorder.stop();
+  cleanupStream(); clearTimers();
+  recordChunks=[]; recordedBlob=null; recordedSeconds=0;
+  if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}
+  audioPreview.removeAttribute('src');
+  previewWrap.classList.add('hidden');
+  redoBtn.classList.add('hidden');
+  sendAudioBtn.classList.add('hidden');
+  stopBtn.classList.add('hidden');
+  recordBtn.classList.remove('hidden');
+  recordBtn.disabled=false;
+  recordStage.classList.remove('recording');
+  recordState.textContent='Pronto para gravar';
+  setTimer(0);
+}
+function bestMimeType(){
+  const options=['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus'];
+  return options.find(t=>window.MediaRecorder?.isTypeSupported?.(t)) || '';
+}
+
+recordBtn.onclick=async()=>{
+  audioMsg.textContent='';
+  if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder){
+    audioMsg.textContent='Este navegador não oferece gravação de áudio. Tente pelo Safari/Chrome atualizado.';
+    return;
+  }
+  try{
+    recordStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    const mimeType=bestMimeType();
+    recorder=mimeType?new MediaRecorder(recordStream,{mimeType}):new MediaRecorder(recordStream);
+    recordChunks=[];
+    recordStartedAt=Date.now();
+    recordedSeconds=0;
+
+    recorder.ondataavailable=e=>{if(e.data?.size)recordChunks.push(e.data)};
+    recorder.onstop=()=>{
+      clearTimers(); cleanupStream();
+      const type=recorder.mimeType || recordChunks[0]?.type || 'audio/webm';
+      recordedBlob=new Blob(recordChunks,{type});
+      recordedSeconds=Math.max(1,Math.min(MAX_RECORD_SECONDS,Math.round((Date.now()-recordStartedAt)/1000)));
+      if(previewUrl)URL.revokeObjectURL(previewUrl);
+      previewUrl=URL.createObjectURL(recordedBlob);
+      audioPreview.src=previewUrl;
+      previewWrap.classList.remove('hidden');
+      redoBtn.classList.remove('hidden');
+      sendAudioBtn.classList.remove('hidden');
+      stopBtn.classList.add('hidden');
+      recordBtn.classList.add('hidden');
+      recordStage.classList.remove('recording');
+      recordState.textContent=`Recado gravado • ${recordedSeconds}s`;
+      setTimer(recordedSeconds);
+    };
+
+    recorder.start(250);
+    recordBtn.classList.add('hidden');
+    stopBtn.classList.remove('hidden');
+    redoBtn.classList.add('hidden');
+    sendAudioBtn.classList.add('hidden');
+    previewWrap.classList.add('hidden');
+    recordStage.classList.add('recording');
+    recordState.textContent='Gravando…';
+    setTimer(0);
+    recordInterval=setInterval(()=>{
+      const sec=Math.min(MAX_RECORD_SECONDS,Math.floor((Date.now()-recordStartedAt)/1000));
+      setTimer(sec);
+    },250);
+    autoStopTimer=setTimeout(()=>{
+      if(recorder?.state==='recording') recorder.stop();
+    },MAX_RECORD_SECONDS*1000);
+  }catch(e){
+    cleanupStream(); clearTimers();
+    audioMsg.textContent=e?.name==='NotAllowedError'?'Você precisa permitir o acesso ao microfone para gravar.':'Não foi possível iniciar o microfone.';
+  }
+};
+
+stopBtn.onclick=()=>{
+  if(recorder?.state==='recording') recorder.stop();
+};
+redoBtn.onclick=()=>resetRecording();
+
+sendAudioBtn.onclick=async()=>{
+  const name=document.querySelector('#audioName').value.trim();
+  const consent=document.querySelector('#audioConsent').checked;
+  if(!recordedBlob){audioMsg.textContent='Grave um recado primeiro.';return;}
+  if(!name){audioMsg.textContent='Informe seu nome ou apelido.';return;}
+  if(!consent){audioMsg.textContent='Marque a autorização antes de enviar.';return;}
+
+  sendAudioBtn.disabled=true;
+  sendAudioBtn.textContent='Enviando…';
+  audioMsg.textContent='Enviando seu recado para aprovação…';
+  try{
+    const form=new FormData();
+    const ext=recordedBlob.type.includes('mp4')?'m4a':recordedBlob.type.includes('ogg')?'ogg':'webm';
+    form.append('audio',recordedBlob,`recado.${ext}`);
+    form.append('display_name',name);
+    form.append('duration_seconds',String(recordedSeconds));
+    form.append('consent','true');
+
+    const r=await fetch(`${C.SUPABASE_URL}/functions/v1/radio-audio-submit`,{
+      method:'POST',
+      headers:{'apikey':C.SUPABASE_PUBLISHABLE_KEY},
+      body:form
+    });
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error||'Não foi possível enviar o áudio.');
+
+    audioMsg.textContent='Recado enviado! Ele vai aparecer para aprovação antes de tocar na rádio.';
+    document.querySelector('#audioConsent').checked=false;
+    resetRecording();
+  }catch(e){
+    audioMsg.textContent=e.message;
+  }finally{
+    sendAudioBtn.disabled=false;
+    sendAudioBtn.textContent='Enviar para aprovação';
+  }
+};
+
+window.addEventListener('beforeunload',()=>cleanupStream());
+
+sb.channel('radio-public')
+  .on('postgres_changes',{event:'*',schema:'public',table:'queue'},load)
+  .subscribe();
+
+load();
+</script>
+</body>
+</html>

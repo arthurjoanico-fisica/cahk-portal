@@ -1,24 +1,21 @@
-VERSÃO 3.2 — LOGO CAHK CORRIGIDA
+# Portal CAHK v4 — visual unificado
 
-# Portal CAHK — v3 responsivo
+Versão que unifica o visual do Portal, Rádio, Loja e Área da Gestão na mesma linguagem minimalista.
 
-Portal unificado do Centro Acadêmico Hugo Kremer.
+## Paleta
+- Branco / off-white
+- Preto / grafite para texto
+- Roxo CAHK como cor de destaque
+- Verde do mascote apenas na identidade visual
 
 ## Rotas
-- `/` Portal público
+- `/` Portal
 - `/radio/` Rádio CAHK
+- `/radio/player.html` Player
+- `/radio/admin.html` Administração da rádio
 - `/loja/` Loja CAHK
-- `/gestao/` Área restrita
+- `/gestao/` Gestão / Caixa / Encomendas
 
-## Contatos configurados
-- CAHK: cahk@fisica.ufpr.br
-- Impressão: cahkimpressora@gmail.com
-- Instagram: @cahk.ufpr
-- WhatsApp Física Geral
-- WhatsApp Repasses
-
-## Eventos
-Edite `public/portal-data.js` para incluir os próximos eventos.
-
-## Visual
-A v3 corrige as proporções da logo e do mascote, usa SVGs nativos nos ícones e amplia o suporte para celular.
+## Deploy
+Substitua os arquivos do repositório `cahk-portal` pelo conteúdo deste pacote e faça commit.
+Depois do deploy, confirme em `/build.txt`: `CAHK Portal build 4.0-minimal-unificado`.
