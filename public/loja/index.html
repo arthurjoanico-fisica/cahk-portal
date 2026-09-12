@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Loja CAHK</title>
+  <meta name="theme-color" content="#0e1116">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+</head>
+<body class="store-page">
+  <div id="toast"></div>
+  <header class="store-topbar">
+    <div>
+      <div class="store-kicker">Centro Acadêmico Hugo Kremer</div>
+      <h1>Loja CAHK</h1>
+      <p class="muted">Camisetas, moletons e outros produtos do CAHK.</p>
+    </div>
+    <button id="openCart" class="primary">Carrinho <span id="cartCount">0</span></button>
+  </header>
+
+  <main class="store-main">
+    <section>
+      <div class="section-head wrap">
+        <div><h2>Produtos</h2><div class="muted small">Selecione o produto e faça sua encomenda.</div></div>
+        <input id="storeSearch" placeholder="Buscar produto">
+      </div>
+      <div id="storeProducts" class="store-product-grid"></div>
+    </section>
+
+    <aside id="storeCart" class="store-cart card">
+      <div class="section-head"><h2>Sua encomenda</h2><button id="closeCart" class="ghost mobile-only">Fechar</button></div>
+      <div id="storeCartItems" class="cart-list"></div>
+      <div class="order-total"><span>Total</span><strong id="storeCartTotal">R$ 0,00</strong></div>
+      <form id="orderForm" class="stack store-order-form">
+        <label>Nome completo<input id="orderName" required maxlength="100"></label>
+        <label>WhatsApp / telefone<input id="orderPhone" required maxlength="30" inputmode="tel"></label>
+        <label>E-mail <span class="muted small">(opcional)</span><input id="orderEmail" type="email" maxlength="160"></label>
+        <label>Turma / curso <span class="muted small">(opcional)</span><input id="orderClass" maxlength="80"></label>
+        <label>Observação <span class="muted small">(opcional)</span><textarea id="orderNote" rows="3" maxlength="500"></textarea></label>
+        <button id="sendOrder" class="primary large" type="submit">Enviar encomenda</button>
+        <p class="muted small">A encomenda será enviada para a gestão do CAHK. Ela não é registrada como venda até ser confirmada pela gestão.</p>
+      </form>
+      <div id="orderSuccess" class="success-box hidden"></div>
+    </aside>
+  </main>
+
+  <script src="loja.js"></script>
+</body>
+</html>

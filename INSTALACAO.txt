@@ -1,0 +1,24 @@
+PORTAL CAHK UNIFICADO — INSTALAÇÃO
+
+1. No GitHub, crie um novo repositório, por exemplo: cahk-portal.
+2. Abra o ZIP e envie PARA A RAIZ DO REPOSITÓRIO os arquivos/pastas:
+   .gitignore
+   package.json
+   wrangler.jsonc
+   README.md
+   INSTALACAO.txt
+   public/
+3. No Cloudflare Workers, conecte esse repositório.
+4. Build command: deixe vazio, se o painel permitir.
+5. Deploy command: npx wrangler deploy
+6. Aguarde o deploy.
+7. Teste:
+   /           Portal
+   /radio/     Rádio
+   /loja/      Loja
+   /gestao/    Área da gestão (login)
+
+IMPORTANTE:
+- Não apague os Workers atuais da Rádio ou do Caixa durante o primeiro teste.
+- Este portal usa os mesmos backends Supabase já existentes.
+- Só depois de testar tudo, decidimos se os Workers antigos serão mantidos como backup ou redirecionados.

@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CaixaFlex 2</title>
+  <meta name="theme-color" content="#0e1116">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+</head>
+<body>
+  <div id="toast"></div>
+
+  <section id="loginView" class="login-page">
+    <div class="login-card">
+      <div class="logo-mark">CF</div>
+      <h1>CaixaFlex 2</h1>
+      <p class="muted">PDV • Estoque • Fiado • Relatórios</p>
+      <form id="loginForm" class="stack">
+        <label>E-mail<input id="loginEmail" type="email" autocomplete="username" required></label>
+        <label>Senha<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+        <button class="primary" type="submit">Entrar</button>
+        <div id="loginMsg" class="muted small"></div>
+      </form>
+    </div>
+  </section>
+
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo-mark small-logo">CF</div>
+        <div><strong>CaixaFlex 2</strong><span id="companyMini">CAHK</span></div>
+      </div>
+      <nav id="nav">
+        <button data-view="pdv" class="active">Balcão / PDV</button>
+        <button data-view="caixa">Caixa</button>
+        <button data-view="vendas">Vendas</button>
+        <button data-view="fiado">Fiado</button>
+        <button data-view="encomendas">Encomendas</button>
+        <button data-view="produtos" data-admin="1">Produtos</button>
+        <button data-view="vendedores" data-admin="1">Vendedores</button>
+        <button data-view="clientes">Clientes</button>
+        <button data-view="relatorios" data-admin="1">Relatórios</button>
+        <button data-view="config" data-admin="1">Configurações</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div id="userName"></div>
+        <div id="userRole" class="muted small"></div>
+        <button id="logoutBtn" class="ghost full">Sair</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div><h1 id="pageTitle">Balcão / PDV</h1><div id="cashStatus" class="muted">Verificando caixa…</div></div>
+        <div id="clock"></div>
+      </header>
+
+      <section id="view-pdv" class="view">
+        <div class="pdv-grid">
+          <div class="card">
+            <div class="section-head"><h2>Produtos</h2><input id="productSearch" placeholder="Buscar nome ou código de barras"></div>
+            <div id="productGrid" class="product-grid"></div>
+          </div>
+          <div class="card cart-card">
+            <h2>Carrinho</h2>
+            <div id="cartItems" class="cart-list"></div>
+            <div class="cart-form">
+              <label>Vendedor<select id="saleSeller"></select></label>
+              <label>Pagamento<select id="paymentType"><option>Dinheiro</option><option>Pix</option><option>Cartão</option><option>Fiado</option></select></label>
+              <label id="clientWrap" class="hidden">Cliente do fiado<select id="saleClient"></select></label>
+              <label>Desconto (R$)<input id="saleDiscount" type="number" min="0" step="0.01" value="0"></label>
+              <label>Observação<input id="saleNote" placeholder="Opcional"></label>
+              <label class="check-line"><input id="printAfterSale" type="checkbox" checked>Imprimir comprovante após finalizar</label>
+            </div>
+            <div class="totals">
+              <div><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
+              <div><span>Desconto</span><strong id="discountPreview">R$ 0,00</strong></div>
+              <div class="grand"><span>Total</span><strong id="total">R$ 0,00</strong></div>
+            </div>
+            <button id="finishSale" class="primary full large">Finalizar venda</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-caixa" class="view hidden">
+        <div class="grid-2">
+          <div class="card"><h2>Status do caixa</h2><div id="cashDetail"></div></div>
+          <div class="card"><h2>Abrir / fechar</h2><div id="cashActions"></div></div>
+        </div>
+        <div class="card"><h2>Resumo do caixa aberto</h2><div id="cashSummary" class="metric-grid"></div></div>
+      </section>
+
+      <section id="view-vendas" class="view hidden">
+        <div class="card">
+          <div class="section-head wrap"><h2>Histórico de vendas</h2><div class="row"><input id="salesDate" type="date"><button id="refreshSales" class="ghost">Atualizar</button></div></div>
+          <div class="table-wrap"><table><thead><tr><th>#</th><th>Data</th><th>Vendedor</th><th>Pagamento</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead><tbody id="salesTable"></tbody></table></div>
+        </div>
+      </section>
+
+      <section id="view-fiado" class="view hidden">
+        <div class="card">
+          <h2>Contas em aberto</h2>
+          <div class="table-wrap"><table><thead><tr><th>Venda</th><th>Cliente</th><th>Data</th><th>Total</th><th>Pago</th><th>Saldo</th><th></th></tr></thead><tbody id="fiadoTable"></tbody></table></div>
+        </div>
+      </section>
+
+
+      <section id="view-encomendas" class="view hidden">
+        <div class="card">
+          <div class="section-head wrap">
+            <div>
+              <h2>Encomendas da Loja CAHK</h2>
+              <p class="muted small">Pedidos feitos pela loja pública. Encomenda só vira venda quando a gestão registrar no PDV.</p>
+            </div>
+            <div class="row">
+              <select id="orderStatusFilter">
+                <option value="">Todos os status</option>
+                <option value="nova">Novas</option>
+                <option value="confirmada">Confirmadas</option>
+                <option value="aguardando_pagamento">Aguardando pagamento</option>
+                <option value="paga">Pagas</option>
+                <option value="pronta">Prontas</option>
+                <option value="entregue">Entregues</option>
+                <option value="cancelada">Canceladas</option>
+              </select>
+              <button id="refreshOrders" class="ghost">Atualizar</button>
+            </div>
+          </div>
+          <div id="orderMetrics" class="metric-grid"></div>
+        </div>
+        <div id="ordersList" class="orders-grid"></div>
+      </section>
+
+      <section id="view-produtos" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <h2>Cadastrar / editar produto</h2>
+            <form id="productForm" class="form-grid">
+              <input id="productId" type="hidden">
+              <label class="span-2">Nome<input id="pName" required></label>
+              <label>Categoria<input id="pCategory"></label>
+              <label>Código de barras<input id="pBarcode"></label>
+              <label>Preço de compra<input id="pCost" type="number" step="0.01" min="0" required></label>
+              <label>Preço de venda<input id="pPrice" type="number" step="0.01" min="0" required></label>
+              <label>Estoque mínimo<input id="pMinStock" type="number" step="0.001" value="0"></label>
+              <label class="check-line"><input id="pActive" type="checkbox" checked>Ativo</label>
+
+              <div class="store-box span-2">
+                <div class="store-box-head">
+                  <div><strong>Loja CAHK</strong><div class="muted small">Configurações públicas deste produto.</div></div>
+                  <label class="check-line"><input id="pStoreVisible" type="checkbox">Mostrar na loja</label>
+                </div>
+                <div class="form-grid store-fields">
+                  <label>Tipo de venda<select id="pStoreMode"><option value="encomenda">Sob encomenda</option><option value="estoque">Pronta entrega</option></select></label>
+                  <label>Prazo estimado (dias)<input id="pStoreLead" type="number" min="0" step="1" value="0"></label>
+                  <label class="span-2">Descrição para a loja<textarea id="pStoreDescription" rows="3" placeholder="Ex.: Moletom oficial do CAHK, tecido..." ></textarea></label>
+                  <label class="span-2">Imagem (URL)<input id="pStoreImage" type="url" placeholder="https://..."></label>
+                  <label>Ordem na loja<input id="pStoreOrder" type="number" step="1" value="0"></label>
+                  <label class="check-line"><input id="pStoreFeatured" type="checkbox">Destaque</label>
+                </div>
+                <div id="variantEditor" class="variant-editor hidden">
+                  <div class="section-head"><h3>Variações / tamanhos</h3><button id="addVariant" type="button" class="ghost">Adicionar</button></div>
+                  <div id="variantList" class="compact-list"></div>
+                  <p class="muted small">Ex.: PP, P, M, G, GG. Salve o produto antes de cadastrar variações.</p>
+                </div>
+              </div>
+
+              <div class="row span-2"><button class="primary" type="submit">Salvar produto</button><button id="clearProduct" class="ghost" type="button">Limpar</button></div>
+            </form>
+          </div>
+          <div class="card"><h2>Estoque</h2><p class="muted small">Use “Ajustar” para mudar estoque; o histórico é preservado.</p><div id="adminProducts" class="compact-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-vendedores" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <h2>Cadastrar vendedor</h2>
+            <form id="sellerForm" class="form-grid">
+              <input id="sellerId" type="hidden">
+              <label>Código<input id="sCode" required></label>
+              <label>Nome<input id="sName" required></label>
+              <label class="span-2">Telefone<input id="sPhone"></label>
+              <label class="check-line span-2"><input id="sActive" type="checkbox" checked>Ativo</label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar vendedor</button><button id="clearSeller" class="ghost" type="button">Limpar</button></div>
+            </form>
+          </div>
+          <div class="card"><h2>Vendedores</h2><div id="sellerList" class="compact-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-clientes" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <h2>Cadastrar cliente</h2>
+            <form id="clientForm" class="form-grid">
+              <input id="clientId" type="hidden">
+              <label class="span-2">Nome<input id="cName" required></label>
+              <label class="span-2">Telefone<input id="cPhone"></label>
+              <label class="check-line span-2"><input id="cActive" type="checkbox" checked>Ativo</label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar cliente</button><button id="clearClient" class="ghost" type="button">Limpar</button></div>
+            </form>
+          </div>
+          <div class="card"><h2>Clientes</h2><div id="clientList" class="compact-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-relatorios" class="view hidden">
+        <div class="card">
+          <div class="section-head wrap"><h2>Resumo por período</h2><div class="row"><input id="reportStart" type="date"><input id="reportEnd" type="date"><button id="refreshReports" class="ghost">Atualizar</button></div></div>
+          <div id="reportMetrics" class="metric-grid"></div>
+        </div>
+        <div class="grid-2"><div class="card"><h2>Por pagamento</h2><div id="reportPayments"></div></div><div class="card"><h2>Por vendedor</h2><div id="reportSellers"></div></div></div>
+      </section>
+
+      <section id="view-config" class="view hidden">
+        <div class="card narrow">
+          <h2>Configurações do comprovante</h2>
+          <form id="configForm" class="form-grid">
+            <label class="span-2">Nome da organização<input id="cfgName" required></label>
+            <label>CNPJ<input id="cfgCnpj"></label>
+            <label>Telefone<input id="cfgPhone"></label>
+            <label class="span-2">Endereço<input id="cfgAddress"></label>
+            <label class="span-2">Mensagem de rodapé<input id="cfgFooter"></label>
+            <label>Largura da impressora<select id="cfgWidth"><option value="80">80 mm</option><option value="58">58 mm</option></select></label>
+            <div class="span-2"><button class="primary" type="submit">Salvar configurações</button></div>
+          </form>
+          <p class="muted small">O comprovante é interno/não fiscal. NFC-e exige integração fiscal específica.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
