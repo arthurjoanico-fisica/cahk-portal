@@ -1,19 +1,17 @@
-PORTAL CAHK v2 — INSTALAÇÃO
+PORTAL CAHK v3
 
 1. Extraia este ZIP.
-2. No GitHub, abra o repositório cahk-portal.
-3. Substitua os arquivos existentes pelos arquivos desta versão, preservando a estrutura.
-4. Faça o commit na branch main.
-5. Aguarde o deploy automático do Cloudflare.
-6. Abra a página e pressione Ctrl+F5.
+2. No repositório cahk-portal, substitua os arquivos pelos deste pacote.
+3. Faça o commit na branch main.
+4. Aguarde o deploy automático do Cloudflare.
+5. Atualize o navegador com Ctrl+F5.
 
-Arquivos principais novos/alterados:
-- public/index.html
-- public/portal.css
-- public/portal.js
-- public/portal-data.js
-- public/assets/cahk-logo.png
-- public/assets/cahk-mascote.png
-- wrangler.jsonc
-
-Rotas da Rádio, Loja e Gestão foram mantidas.
+TESTAR NO CELULAR:
+- página inicial
+- menu
+- Rádio
+- Loja
+- botão Gestão
+- links de e-mail
+- Instagram
+- grupos do WhatsApp

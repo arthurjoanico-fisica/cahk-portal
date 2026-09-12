@@ -1,30 +1,22 @@
-# Portal CAHK — v2 minimalista
+# Portal CAHK — v3 responsivo
 
-Portal unificado do Centro Acadêmico Hugo Kremer, preparado para futura publicação em `cahk.app`.
+Portal unificado do Centro Acadêmico Hugo Kremer.
 
 ## Rotas
-
-- `/` — Portal público
-- `/radio/` — Rádio CAHK
-- `/loja/` — Loja CAHK
-- `/gestao/` — Área interna protegida por login
-- `/musica/` — compatibilidade com a rota antiga da rádio
-- `/caixa/` — compatibilidade com a rota antiga da gestão
-
-## Identidade
-
-A página inicial usa os elementos da identidade visual enviados pelo CAHK no arquivo-base do Canva. Os arquivos tratados ficam em `public/assets/`.
+- `/` Portal público
+- `/radio/` Rádio CAHK
+- `/loja/` Loja CAHK
+- `/gestao/` Área restrita
 
 ## Contatos configurados
+- CAHK: cahk@fisica.ufpr.br
+- Impressão: cahkimpressora@gmail.com
+- Instagram: @cahk.ufpr
+- WhatsApp Física Geral
+- WhatsApp Repasses
 
-- CAHK: `cahk@fisica.ufpr.br`
-- Impressão: `cahkimpressora@gmail.com`
-- Instagram: `https://www.instagram.com/cahk.ufpr/`
+## Eventos
+Edite `public/portal-data.js` para incluir os próximos eventos.
 
-## Publicar eventos
-
-Edite `public/portal-data.js`. A página aceita até três eventos em destaque. Quando a lista estiver vazia, mostra "Agenda em atualização" sem inventar datas ou eventos.
-
-## Cloudflare
-
-O `wrangler.jsonc` está configurado para Static Assets a partir de `./public`.
+## Visual
+A v3 corrige as proporções da logo e do mascote, usa SVGs nativos nos ícones e amplia o suporte para celular.
