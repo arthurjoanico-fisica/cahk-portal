@@ -1,29 +1,30 @@
-# Portal CAHK Unificado v1
+# Portal CAHK — v2 minimalista
 
-Estrutura funcional unificada, preparada para o futuro `cahk.app`.
+Portal unificado do Centro Acadêmico Hugo Kremer, preparado para futura publicação em `cahk.app`.
 
-Rotas principais:
-- `/` — Portal CAHK
-- `/radio/` — Rádio CAHK pública
-- `/radio/player.html` — Player da sala
-- `/radio/admin.html` — Administração da rádio (código administrativo)
-- `/loja/` — Loja CAHK pública
-- `/gestao/` — Caixa, Encomendas, Produtos, Estoque etc. (login obrigatório)
+## Rotas
 
-Compatibilidade:
-- `/musica/` redireciona para `/radio/`
-- `/caixa/` redireciona para `/gestao/`
+- `/` — Portal público
+- `/radio/` — Rádio CAHK
+- `/loja/` — Loja CAHK
+- `/gestao/` — Área interna protegida por login
+- `/musica/` — compatibilidade com a rota antiga da rádio
+- `/caixa/` — compatibilidade com a rota antiga da gestão
 
-## Publicação
+## Identidade
 
-Crie um repositório para o portal e envie O CONTEÚDO desta pasta para a raiz do repositório. Conecte o repositório ao Cloudflare Workers.
+A página inicial usa os elementos da identidade visual enviados pelo CAHK no arquivo-base do Canva. Os arquivos tratados ficam em `public/assets/`.
 
-O projeto usa caminhos relativos e internos; quando o domínio `cahk.app` estiver disponível, basta associá-lo ao mesmo Worker. A estrutura de URLs já estará pronta.
+## Contatos configurados
 
-## Segurança
+- CAHK: `cahk@fisica.ufpr.br`
+- Impressão: `cahkimpressora@gmail.com`
+- Instagram: `https://www.instagram.com/cahk.ufpr/`
 
-A Loja é pública. A Área da Gestão continua usando o login do Caixa CAHK e não é anunciada como serviço público; o link fica discreto no rodapé do Portal.
+## Publicar eventos
 
-## Próxima fase
+Edite `public/portal-data.js`. A página aceita até três eventos em destaque. Quando a lista estiver vazia, mostra "Agenda em atualização" sem inventar datas ou eventos.
 
-Depois de validar navegação e funcionamento, aplicar a identidade visual definitiva (astronomia/nebulosas/Hubble) sem alterar a arquitetura.
+## Cloudflare
+
+O `wrangler.jsonc` está configurado para Static Assets a partir de `./public`.
