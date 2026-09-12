@@ -1,19 +1,22 @@
-VERSÃO 3.2 — LOGO CAHK CORRIGIDA
+PORTAL CAHK v5.0 — EVENTOS + LOJA PELO CAIXA
 
-PORTAL CAHK v3
+O backend já foi preparado no Supabase.
 
+PARA PUBLICAR:
 1. Extraia este ZIP.
-2. No repositório cahk-portal, substitua os arquivos pelos deste pacote.
-3. Faça o commit na branch main.
-4. Aguarde o deploy automático do Cloudflare.
-5. Atualize o navegador com Ctrl+F5.
+2. No GitHub, abra o repositório cahk-portal.
+3. Substitua os arquivos existentes pelo conteúdo deste pacote, preservando a estrutura.
+4. Faça o commit na branch main.
+5. Aguarde o deploy do Cloudflare.
+6. Confira /build.txt — deve mostrar: CAHK Portal build 5.0-eventos-loja-admin
+7. Faça Ctrl + F5.
 
-TESTAR NO CELULAR:
-- página inicial
-- menu
-- Rádio
-- Loja
-- botão Gestão
-- links de e-mail
-- Instagram
-- grupos do WhatsApp
+NOVO NA GESTÃO:
+- Aba "Eventos do Portal": título, data, horário, local, descrição, link, imagem, destaque e publicar/pausar.
+- Aba "Produtos / Loja": continua cadastrando os produtos do Caixa e agora permite enviar a foto diretamente, marcar "Mostrar na loja", definir pronta entrega/sob encomenda, prazo e tamanhos.
+
+EVENTOS:
+Os eventos publicados aparecem automaticamente na página inicial. Eventos com data passada deixam de aparecer no portal, mas continuam visíveis na administração.
+
+IMAGENS:
+JPG, PNG ou WebP, até 5 MB. São enviadas para o armazenamento do CAHK no Supabase.

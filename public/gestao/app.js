@@ -11,7 +11,7 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const dateInput=d=>{const x=d?new Date(d):new Date(),y=x.getFullYear(),m=String(x.getMonth()+1).padStart(2,'0'),day=String(x.getDate()).padStart(2,'0');return `${y}-${m}-${day}`};
 
-  let session=null,profile=null,products=[],sellers=[],clients=[],config=null,cart=[],openCash=null,salesCache=[],ordersCache=[],productVariants=[];
+  let session=null,profile=null,products=[],sellers=[],clients=[],config=null,cart=[],openCash=null,salesCache=[],ordersCache=[],productVariants=[],eventsCache=[];
 
   function toast(msg,type='ok'){const n=document.createElement('div');n.className=`toast ${type}`;n.textContent=msg;$('#toast').appendChild(n);setTimeout(()=>n.remove(),3500)}
   const errMsg=e=>e?.message||e?.error_description||String(e);
@@ -20,6 +20,30 @@
     if(error) throw error;
     if(data?.error) throw new Error(data.error);
     return data;
+  }
+
+  async function portalAdminApi(action,payload={}){
+    const {data,error}=await sb.functions.invoke('portal-admin',{body:{action,...payload}});
+    if(error) throw error;
+    if(data?.error) throw new Error(data.error);
+    return data;
+  }
+  async function uploadPublicImage(file,kind='media'){
+    if(!file)return null;
+    if(file.size>5*1024*1024)throw new Error('A imagem deve ter até 5 MB');
+    const mime=String(file.type||'').toLowerCase();
+    const ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"}[mime];
+    if(!ext)throw new Error('Use uma imagem JPG, PNG ou WebP');
+    const now=new Date();const ym=`${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}`;
+    const path=`${kind}/${ym}/${crypto.randomUUID()}.${ext}`;
+    const {error}=await sb.storage.from('cahk-public-media').upload(path,file,{contentType:mime,upsert:false,cacheControl:'31536000'});
+    if(error)throw error;
+    return sb.storage.from('cahk-public-media').getPublicUrl(path).data.publicUrl;
+  }
+  function setMediaPreview(selector,url){
+    const el=$(selector);if(!el)return;
+    if(!url){el.classList.add('hidden');el.innerHTML='';return}
+    el.classList.remove('hidden');el.innerHTML=`<img src="${esc(url)}" alt="Prévia"><div class="muted small">Imagem atual</div>`;
   }
 
   async function init(){
@@ -63,11 +87,11 @@
   async function loadClients(){const {data,error}=await sb.from('clientes').select('*').order('nome');if(error)throw error;clients=data||[];$('#saleClient').innerHTML='<option value="">Selecione…</option>'+clients.filter(x=>x.ativo).map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('');renderClientList()}
   async function loadCash(){const {data,error}=await sb.from('caixas').select('*').eq('status','aberto').order('aberto_em',{ascending:false}).limit(1);if(error)throw error;openCash=data?.[0]||null;renderCash()}
 
-  const titles={pdv:'Balcão / PDV',caixa:'Caixa',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',produtos:'Produtos',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',config:'Configurações'};
+  const titles={pdv:'Balcão / PDV',caixa:'Caixa',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',eventosportal:'Eventos do Portal',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',config:'Configurações'};
   function switchView(v){
     $$('.view').forEach(x=>x.classList.add('hidden'));$(`#view-${v}`).classList.remove('hidden');
     $$('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('#pageTitle').textContent=titles[v]||v;
-    if(v==='vendas')loadSales();if(v==='fiado')loadFiado();if(v==='encomendas')loadOrders();if(v==='relatorios')loadReports();if(v==='caixa')loadCash().then(loadCashSummary);
+    if(v==='vendas')loadSales();if(v==='fiado')loadFiado();if(v==='encomendas')loadOrders();if(v==='eventosportal')loadEventsAdmin();if(v==='relatorios')loadReports();if(v==='caixa')loadCash().then(loadCashSummary);
   }
   $$('#nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 
@@ -181,11 +205,11 @@
   function fillProduct(id){
     const p=products.find(x=>x.id===id);if(!p)return;
     $('#productId').value=p.id;$('#pName').value=p.nome;$('#pCategory').value=p.categoria||'';$('#pBarcode').value=p.codigo_barras||'';$('#pCost').value=p.preco_compra;$('#pPrice').value=p.preco_venda;$('#pMinStock').value=p.estoque_minimo;$('#pActive').checked=p.ativo;
-    $('#pStoreVisible').checked=!!p.loja_visivel;$('#pStoreMode').value=p.loja_modo||'encomenda';$('#pStoreLead').value=Number(p.loja_prazo_dias||0);$('#pStoreDescription').value=p.loja_descricao||'';$('#pStoreImage').value=p.loja_imagem_url||'';$('#pStoreOrder').value=Number(p.loja_ordem||0);$('#pStoreFeatured').checked=!!p.loja_destaque;
+    $('#pStoreVisible').checked=!!p.loja_visivel;$('#pStoreMode').value=p.loja_modo||'encomenda';$('#pStoreLead').value=Number(p.loja_prazo_dias||0);$('#pStoreDescription').value=p.loja_descricao||'';$('#pStoreImage').value=p.loja_imagem_url||'';$('#pStoreImageFile').value='';setMediaPreview('#pStoreImagePreview',p.loja_imagem_url||'');$('#pStoreOrder').value=Number(p.loja_ordem||0);$('#pStoreFeatured').checked=!!p.loja_destaque;
     loadVariants(p.id);
   }
   function clearProduct(){
-    $('#productForm').reset();$('#productId').value='';$('#pActive').checked=true;$('#pMinStock').value='0';$('#pStoreMode').value='encomenda';$('#pStoreLead').value='0';$('#pStoreOrder').value='0';productVariants=[];renderVariants();
+    $('#productForm').reset();$('#productId').value='';$('#pStoreImage').value='';setMediaPreview('#pStoreImagePreview','');$('#pActive').checked=true;$('#pMinStock').value='0';$('#pStoreMode').value='encomenda';$('#pStoreLead').value='0';$('#pStoreOrder').value='0';productVariants=[];renderVariants();
   }
   $('#clearProduct').onclick=clearProduct;
   $('#productForm').onsubmit=async e=>{
@@ -196,11 +220,47 @@
       let saved;
       if(id){const r=await sb.from('produtos').update(base).eq('id',id).select().single();if(r.error)throw r.error;saved=r.data}
       else{const r=await sb.from('produtos').insert(base).select().single();if(r.error)throw r.error;saved=r.data}
-      await adminApi('set_product_store',{id:saved.id,product:{loja_visivel:$('#pStoreVisible').checked,loja_descricao:$('#pStoreDescription').value.trim()||null,loja_imagem_url:$('#pStoreImage').value.trim()||null,loja_modo:$('#pStoreMode').value,loja_prazo_dias:Math.max(0,Number($('#pStoreLead').value)||0),loja_ordem:Number($('#pStoreOrder').value)||0,loja_destaque:$('#pStoreFeatured').checked}});
+      let imageUrl=$('#pStoreImage').value.trim()||null;
+      const imageFile=$('#pStoreImageFile').files?.[0];
+      if(imageFile){toast('Enviando imagem do produto…');imageUrl=await uploadPublicImage(imageFile,'products')}
+      await adminApi('set_product_store',{id:saved.id,product:{loja_visivel:$('#pStoreVisible').checked,loja_descricao:$('#pStoreDescription').value.trim()||null,loja_imagem_url:imageUrl,loja_modo:$('#pStoreMode').value,loja_prazo_dias:Math.max(0,Number($('#pStoreLead').value)||0),loja_ordem:Number($('#pStoreOrder').value)||0,loja_destaque:$('#pStoreFeatured').checked}});
       toast('Produto salvo');await loadProducts();fillProduct(saved.id);
     }catch(e){toast(errMsg(e),'error')}
   };
   async function adjustStock(id){const p=products.find(x=>x.id===id);if(!p)return;const val=prompt(`Novo estoque de "${p.nome}"`,String(p.estoque));if(val===null)return;const n=Number(String(val).replace(',','.'));if(!Number.isFinite(n))return toast('Estoque inválido','error');const motivo=prompt('Motivo do ajuste','Contagem física')||'Ajuste manual';try{const{error}=await sb.rpc('ajustar_estoque',{p_produto_id:id,p_novo_estoque:n,p_motivo:motivo});if(error)throw error;toast('Estoque ajustado');await loadProducts()}catch(e){toast(errMsg(e),'error')}}
+
+  // EVENTOS DO PORTAL
+  $('#refreshEventsAdmin').onclick=loadEventsAdmin;
+  $('#clearEvent').onclick=clearEventForm;
+  function clearEventForm(){
+    $('#eventForm').reset();$('#eventId').value='';$('#eventImageUrl').value='';$('#eventOrder').value='0';$('#eventActive').checked=true;$('#eventFeatured').checked=false;setMediaPreview('#eventImagePreview','');
+  }
+  async function loadEventsAdmin(){
+    try{const data=await portalAdminApi('list_events');eventsCache=data.events||[];renderEventsAdmin()}catch(e){toast(errMsg(e),'error')}
+  }
+  function renderEventsAdmin(){
+    const box=$('#adminEventsList');if(!box)return;
+    box.innerHTML=eventsCache.length?eventsCache.map(ev=>`<div class="compact-item event-admin-item"><div class="event-admin-main">${ev.image_url?`<img src="${esc(ev.image_url)}" alt="">`:''}<div><strong>${esc(ev.title)}</strong><div class="muted small">${new Date(`${ev.event_date}T12:00:00`).toLocaleDateString('pt-BR')}${ev.start_time?` • ${String(ev.start_time).slice(0,5)}`:''}${ev.place?` • ${esc(ev.place)}`:''} • ${ev.active?'publicado':'pausado'}</div></div></div><div class="actions"><button class="ghost" data-edit-event="${ev.id}">Editar</button><button class="danger" data-delete-event="${ev.id}">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhum evento cadastrado.</div>';
+    $$('[data-edit-event]').forEach(b=>b.onclick=()=>fillEventForm(b.dataset.editEvent));
+    $$('[data-delete-event]').forEach(b=>b.onclick=()=>deleteEvent(b.dataset.deleteEvent));
+  }
+  function fillEventForm(id){
+    const ev=eventsCache.find(x=>x.id===id);if(!ev)return;
+    $('#eventId').value=ev.id;$('#eventTitle').value=ev.title||'';$('#eventDate').value=ev.event_date||'';$('#eventTime').value=ev.start_time?String(ev.start_time).slice(0,5):'';$('#eventPlace').value=ev.place||'';$('#eventDescription').value=ev.description||'';$('#eventUrl').value=ev.event_url||'';$('#eventImageUrl').value=ev.image_url||'';$('#eventOrder').value=Number(ev.display_order||0);$('#eventActive').checked=!!ev.active;$('#eventFeatured').checked=!!ev.featured;$('#eventImageFile').value='';setMediaPreview('#eventImagePreview',ev.image_url||'');window.scrollTo({top:0,behavior:'smooth'});
+  }
+  async function deleteEvent(id){
+    const ev=eventsCache.find(x=>x.id===id);if(!ev||!confirm(`Excluir o evento "${ev.title}"?`))return;
+    try{await portalAdminApi('delete_event',{id});toast('Evento excluído');clearEventForm();await loadEventsAdmin()}catch(e){toast(errMsg(e),'error')}
+  }
+  $('#eventForm').onsubmit=async e=>{
+    e.preventDefault();
+    try{
+      let imageUrl=$('#eventImageUrl').value||null;const file=$('#eventImageFile').files?.[0];
+      if(file){toast('Enviando imagem do evento…');imageUrl=await uploadPublicImage(file,'events')}
+      const event={id:$('#eventId').value||undefined,title:$('#eventTitle').value.trim(),event_date:$('#eventDate').value,start_time:$('#eventTime').value||null,place:$('#eventPlace').value.trim()||null,description:$('#eventDescription').value.trim()||null,event_url:$('#eventUrl').value.trim()||null,image_url:imageUrl,display_order:Number($('#eventOrder').value)||0,active:$('#eventActive').checked,featured:$('#eventFeatured').checked};
+      const data=await portalAdminApi('save_event',{event});toast('Evento salvo no Portal CAHK');await loadEventsAdmin();fillEventForm(data.event.id);
+    }catch(e){toast(errMsg(e),'error')}
+  };
 
   // ENCOMENDAS
   const orderStatusLabel={nova:'Nova',confirmada:'Confirmada',aguardando_pagamento:'Aguardando pagamento',paga:'Paga',pronta:'Pronta',entregue:'Entregue',cancelada:'Cancelada'};

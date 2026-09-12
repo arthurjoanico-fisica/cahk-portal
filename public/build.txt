@@ -1,1 +1,1 @@
-CAHK Portal build 4.0-minimal-unificado
+CAHK Portal build 5.0-eventos-loja-admin

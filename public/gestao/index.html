@@ -39,7 +39,8 @@
         <button data-view="vendas">Vendas</button>
         <button data-view="fiado">Fiado</button>
         <button data-view="encomendas">Encomendas</button>
-        <button data-view="produtos" data-admin="1">Produtos</button>
+        <button data-view="eventosportal" data-admin="1">Eventos do Portal</button>
+        <button data-view="produtos" data-admin="1">Produtos / Loja</button>
         <button data-view="vendedores" data-admin="1">Vendedores</button>
         <button data-view="clientes">Clientes</button>
         <button data-view="relatorios" data-admin="1">Relatórios</button>
@@ -135,6 +136,35 @@
         <div id="ordersList" class="orders-grid"></div>
       </section>
 
+
+      <section id="view-eventosportal" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-head"><div><h2>Evento do Portal</h2><p class="muted small">Cadastre o que os alunos verão na página inicial.</p></div></div>
+            <form id="eventForm" class="form-grid">
+              <input id="eventId" type="hidden">
+              <input id="eventImageUrl" type="hidden">
+              <label class="span-2">Nome do evento<input id="eventTitle" maxlength="160" required placeholder="Ex.: CineCAHK — Interestelar"></label>
+              <label>Data<input id="eventDate" type="date" required></label>
+              <label>Horário<input id="eventTime" type="time"></label>
+              <label class="span-2">Local<input id="eventPlace" maxlength="220" placeholder="Ex.: Auditório da Física"></label>
+              <label class="span-2">Descrição<textarea id="eventDescription" rows="4" maxlength="3000" placeholder="Texto curto que aparecerá no Portal CAHK."></textarea></label>
+              <label class="span-2">Link do evento<input id="eventUrl" type="url" placeholder="https://www.instagram.com/... ou link de inscrição"></label>
+              <label class="span-2">Imagem do evento<input id="eventImageFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">JPG, PNG ou WebP, até 5 MB. A imagem será hospedada pelo próprio CAHK.</span></label>
+              <div id="eventImagePreview" class="media-preview span-2 hidden"></div>
+              <label>Ordem<input id="eventOrder" type="number" step="1" value="0"></label>
+              <label class="check-line"><input id="eventActive" type="checkbox" checked>Publicado</label>
+              <label class="check-line span-2"><input id="eventFeatured" type="checkbox">Evento em destaque</label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar evento</button><button id="clearEvent" class="ghost" type="button">Novo / limpar</button></div>
+            </form>
+          </div>
+          <div class="card">
+            <div class="section-head"><div><h2>Eventos cadastrados</h2><p class="muted small">Edite, pause ou exclua eventos do portal.</p></div><button id="refreshEventsAdmin" class="ghost" type="button">Atualizar</button></div>
+            <div id="adminEventsList" class="compact-list"></div>
+          </div>
+        </div>
+      </section>
+
       <section id="view-produtos" class="view hidden">
         <div class="grid-2">
           <div class="card">
@@ -158,7 +188,7 @@
                   <label>Tipo de venda<select id="pStoreMode"><option value="encomenda">Sob encomenda</option><option value="estoque">Pronta entrega</option></select></label>
                   <label>Prazo estimado (dias)<input id="pStoreLead" type="number" min="0" step="1" value="0"></label>
                   <label class="span-2">Descrição para a loja<textarea id="pStoreDescription" rows="3" placeholder="Ex.: Moletom oficial do CAHK, tecido..." ></textarea></label>
-                  <label class="span-2">Imagem (URL)<input id="pStoreImage" type="url" placeholder="https://..."></label>
+                  <input id="pStoreImage" type="hidden"><label class="span-2">Imagem do produto<input id="pStoreImageFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">Envie uma foto da camiseta, moletom ou outro produto. JPG, PNG ou WebP, até 5 MB.</span></label><div id="pStoreImagePreview" class="media-preview span-2 hidden"></div>
                   <label>Ordem na loja<input id="pStoreOrder" type="number" step="1" value="0"></label>
                   <label class="check-line"><input id="pStoreFeatured" type="checkbox">Destaque</label>
                 </div>
