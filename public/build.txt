@@ -1,1 +1,1 @@
-CAHK Portal build 5.0-eventos-loja-admin
+CAHK Portal build 5.3-excluir-produto-modo-escuro

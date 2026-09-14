@@ -1,4 +1,26 @@
 (() => {
+  const root = document.documentElement;
+  const themeToggle = document.querySelector('#themeToggle');
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  const storedTheme = (() => { try { return localStorage.getItem('cahk-theme'); } catch { return null; } })();
+  if (storedTheme === 'dark' || storedTheme === 'light') root.dataset.theme = storedTheme === 'dark' ? 'dark' : '';
+  const syncThemeUi = () => {
+    const dark = root.dataset.theme === 'dark';
+    if (themeToggle) {
+      themeToggle.setAttribute('aria-label', dark ? 'Ativar modo claro' : 'Ativar modo escuro');
+      themeToggle.setAttribute('title', dark ? 'Ativar modo claro' : 'Ativar modo escuro');
+      themeToggle.setAttribute('aria-pressed', String(dark));
+    }
+    if (themeMeta) themeMeta.setAttribute('content', dark ? '#111015' : '#5b2bbf');
+  };
+  if (themeToggle) themeToggle.addEventListener('click', () => {
+    const dark = root.dataset.theme === 'dark';
+    if (dark) delete root.dataset.theme; else root.dataset.theme = 'dark';
+    try { localStorage.setItem('cahk-theme', dark ? 'light' : 'dark'); } catch {}
+    syncThemeUi();
+  });
+  syncThemeUi();
+
   const menuButton = document.querySelector('.menu-toggle');
   const nav = document.querySelector('.main-nav');
   if (menuButton && nav) {

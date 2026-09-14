@@ -199,8 +199,10 @@
   };
   function renderAdminProducts(){
     if(!$('#adminProducts'))return;
-    $('#adminProducts').innerHTML=products.length?products.map(p=>`<div class="compact-item"><div><strong>${esc(p.nome)}</strong><div class="muted small">${brl(p.preco_venda)} • estoque ${Number(p.estoque).toLocaleString('pt-BR')} • ${p.ativo?'ativo':'inativo'}${p.loja_visivel?' • LOJA':''}</div></div><div class="actions"><button class="ghost" data-edit-product="${p.id}">Editar</button><button class="ghost" data-stock="${p.id}">Ajustar</button></div></div>`).join(''):'<div class="empty">Nenhum produto.</div>';
-    $$('[data-edit-product]').forEach(b=>b.onclick=()=>fillProduct(b.dataset.editProduct));$$('[data-stock]').forEach(b=>b.onclick=()=>adjustStock(b.dataset.stock));
+    $('#adminProducts').innerHTML=products.length?products.map(p=>`<div class="compact-item"><div><strong>${esc(p.nome)}</strong><div class="muted small">${brl(p.preco_venda)} • estoque ${Number(p.estoque).toLocaleString('pt-BR')} • ${p.ativo?'ativo':'inativo'}${p.loja_visivel?' • LOJA':''}</div></div><div class="actions"><button class="ghost" data-edit-product="${p.id}">Editar</button><button class="ghost" data-stock="${p.id}">Ajustar</button><button class="danger" data-delete-product="${p.id}">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhum produto.</div>';
+    $$('[data-edit-product]').forEach(b=>b.onclick=()=>fillProduct(b.dataset.editProduct));
+    $$('[data-stock]').forEach(b=>b.onclick=()=>adjustStock(b.dataset.stock));
+    $$('[data-delete-product]').forEach(b=>b.onclick=()=>deleteProduct(b.dataset.deleteProduct));
   }
   function fillProduct(id){
     const p=products.find(x=>x.id===id);if(!p)return;
@@ -228,6 +230,36 @@
     }catch(e){toast(errMsg(e),'error')}
   };
   async function adjustStock(id){const p=products.find(x=>x.id===id);if(!p)return;const val=prompt(`Novo estoque de "${p.nome}"`,String(p.estoque));if(val===null)return;const n=Number(String(val).replace(',','.'));if(!Number.isFinite(n))return toast('Estoque inválido','error');const motivo=prompt('Motivo do ajuste','Contagem física')||'Ajuste manual';try{const{error}=await sb.rpc('ajustar_estoque',{p_produto_id:id,p_novo_estoque:n,p_motivo:motivo});if(error)throw error;toast('Estoque ajustado');await loadProducts()}catch(e){toast(errMsg(e),'error')}}
+
+  async function deleteProduct(id){
+    const p=products.find(x=>x.id===id);if(!p)return;
+    if(!confirm(`Excluir definitivamente o produto "${p.nome}"?
+
+Se ele já tiver histórico de venda ou encomenda, o sistema não poderá apagá-lo e oferecerá a opção de inativar.`))return;
+    try{
+      const {error}=await sb.from('produtos').delete().eq('id',id);
+      if(error)throw error;
+      if($('#productId').value===id)clearProduct();
+      toast('Produto excluído');
+      await loadProducts();
+    }catch(e){
+      const msg=errMsg(e);
+      const referenced=/foreign key|violates foreign key|23503|referenced|constraint/i.test(msg);
+      if(referenced){
+        if(confirm(`Este produto possui histórico, variações ou registros vinculados e não pode ser apagado definitivamente.
+
+Deseja inativá-lo e removê-lo da loja/balcão?`)){
+          try{
+            const {error}=await sb.from('produtos').update({ativo:false,loja_visivel:false,updated_at:new Date().toISOString()}).eq('id',id);
+            if(error)throw error;
+            toast('Produto inativado');
+            if($('#productId').value===id)clearProduct();
+            await loadProducts();
+          }catch(e2){toast(errMsg(e2),'error')}
+        }
+      }else toast(msg,'error');
+    }
+  }
 
   // EVENTOS DO PORTAL
   $('#refreshEventsAdmin').onclick=loadEventsAdmin;

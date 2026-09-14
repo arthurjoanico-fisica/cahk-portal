@@ -25,3 +25,22 @@ Depois do deploy, confirme em `/build.txt`: `CAHK Portal build 4.0-minimal-unifi
 - Gestão ganhou a aba **Eventos do Portal** com imagem, descrição, data, horário, local e link.
 - Produtos / Loja agora aceita upload direto de foto do produto.
 - A página inicial busca os eventos publicados automaticamente no Supabase.
+
+
+## v5.1 - Favicon do CAHK
+- Favicon do mascote aplicado a Portal, Rádio, Loja e Gestão.
+- Ícone Apple Touch e manifest adicionados para atalhos no celular.
+
+## v5.2 — Excluir produtos
+- Botão vermelho **Excluir** em Produtos / Loja.
+- Produtos sem histórico podem ser apagados definitivamente.
+- Se houver vínculo com vendas/encomendas/variações, o sistema preserva o histórico e oferece inativar o produto, removendo-o do balcão e da loja.
+
+
+## v5.3 — modo escuro
+- Mantém o botão **Excluir** dos produtos da v5.2.
+- Adiciona botão de alternância claro/escuro no cabeçalho do Portal.
+- A preferência fica salva no navegador (`localStorage`).
+- Na primeira visita, respeita a preferência de tema do sistema operacional.
+- Rádio, Loja e Gestão já usam interface escura por padrão.
+- Marcador de versão: `/build.txt` → `CAHK Portal build 5.3-excluir-produto-modo-escuro`.
