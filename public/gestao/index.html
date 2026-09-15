@@ -44,6 +44,7 @@
         <button data-view="vendas">Vendas</button>
         <button data-view="fiado">Fiado</button>
         <button data-view="encomendas">Encomendas</button>
+        <button data-view="mltn">MLTN / POD</button>
         <button data-view="eventosportal" data-admin="1">Eventos do Portal</button>
         <button data-view="produtos" data-admin="1">Produtos / Loja</button>
         <button data-view="vendedores" data-admin="1">Vendedores</button>
@@ -139,6 +140,46 @@
           <div id="orderMetrics" class="metric-grid"></div>
         </div>
         <div id="ordersList" class="orders-grid"></div>
+      </section>
+
+
+      <section id="view-mltn" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-head"><div><h2>Configuração MLTN / Print on Demand</h2><p class="muted small">Central interna para organizar a produção sob demanda.</p></div></div>
+            <form id="mltnConfigForm" class="form-grid">
+              <label class="span-2">Pasta principal do Google Drive<input id="mltnDriveUrl" type="url" placeholder="https://drive.google.com/..."><span class="muted small">Use a pasta com estampas, mockups e especificações aprovadas de cada produto.</span></label>
+              <label class="span-2">Endereço do remetente MLTN<textarea id="mltnSenderAddress" rows="3">Rua Arnaldo Teixeira Lemos, 857 - Jardim Lima - Franca/SP - CEP 14403-108</textarea></label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar neste navegador</button><a id="mltnOpenDrive" class="ghost button-link" target="_blank" rel="noopener">Abrir Drive</a><a class="ghost button-link" href="https://melhorenvio.com.br/" target="_blank" rel="noopener">Abrir Melhor Envio</a></div>
+            </form>
+            <p class="muted small">Esses dados ficam somente neste navegador da gestão. Nenhum token ou senha é salvo no site.</p>
+          </div>
+          <div class="card">
+            <h2>Checklist para começar</h2>
+            <ol class="mltn-checklist">
+              <li>Escolher quais bases da MLTN serão vendidas.</li>
+              <li>Criar estampa e mockup de cada produto.</li>
+              <li>Organizar arte, mockup e especificação na pasta do Drive.</li>
+              <li>Produzir e aprovar as amostras.</li>
+              <li>Configurar o Melhor Envio usando o endereço da MLTN como remetente.</li>
+              <li>Quando entrar um pedido: confirmar pagamento, gerar etiqueta e enviar dados + etiqueta para produção.</li>
+            </ol>
+            <div class="mltn-links"><a class="ghost button-link" href="https://mltn.com.br/pages/pod-como-funciona" target="_blank" rel="noopener">Como funciona o POD</a><a class="ghost button-link" href="https://mltn.com.br/pages/catalago-de-produtos" target="_blank" rel="noopener">Catálogo MLTN</a></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-head"><div><h2>Estrutura recomendada do Drive</h2><p class="muted small">A MLTN informa que o Drive é a fonte das artes, mockups e especificações. Os pedidos em si são enviados com dados e etiqueta a cada venda.</p></div></div>
+          <pre class="drive-tree">CAHK - MLTN/
+├── 00_GUIA_E_PADROES/
+├── 01_CAMISETA_BASICA/
+│   ├── ARTE_APROVADA/
+│   ├── MOCKUPS/
+│   └── ESPECIFICACAO.txt
+├── 02_OVERSIZED/
+├── 03_MOLETOM/
+├── 04_OUTROS_PRODUTOS/
+└── 99_AMOSTRAS_APROVADAS/</pre>
+        </div>
       </section>
 
 
@@ -271,5 +312,14 @@
   </div>
 
   <script src="app.js"></script>
+
+  <div id="mltnOrderModal" class="mltn-modal hidden" role="dialog" aria-modal="true" aria-labelledby="mltnModalTitle">
+    <div class="mltn-modal-card">
+      <div class="section-head"><div><h2 id="mltnModalTitle">Preparar pedido MLTN</h2><p class="muted small">Resumo para produção e geração da etiqueta.</p></div><button id="closeMltnModal" class="ghost" type="button">Fechar</button></div>
+      <textarea id="mltnOrderText" rows="18" readonly></textarea>
+      <div class="row mltn-modal-actions"><button id="copyMltnOrder" class="primary" type="button">Copiar dados do pedido</button><a id="modalOpenDrive" class="ghost button-link" target="_blank" rel="noopener">Abrir Drive</a><a class="ghost button-link" href="https://melhorenvio.com.br/" target="_blank" rel="noopener">Gerar etiqueta</a></div>
+    </div>
+  </div>
+
 </body>
 </html>

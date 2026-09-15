@@ -1,0 +1,32 @@
+CAHK + MLTN — CONFIGURAÇÃO INICIAL
+
+Fluxo público informado pela MLTN:
+1. A loja CAHK vende.
+2. A MLTN produz, confere, embala e envia ao cliente.
+3. O Google Drive é usado para ARTES, MOCKUPS e ESPECIFICAÇÕES dos produtos.
+4. Antes de vender, produzir e aprovar amostras.
+5. Configurar Melhor Envio com o endereço da MLTN como remetente.
+6. A cada venda, enviar à MLTN os dados do pedido e a etiqueta de envio.
+
+Estrutura sugerida do Drive:
+CAHK - MLTN/
+  00_GUIA_E_PADROES/
+  01_CAMISETA_BASICA/
+    ARTE_APROVADA/
+    MOCKUPS/
+    ESPECIFICACAO.txt
+  02_OVERSIZED/
+  03_MOLETOM/
+  04_OUTROS_PRODUTOS/
+  99_AMOSTRAS_APROVADAS/
+
+NO SITE v5.6:
+- Checkout coleta CPF e endereço para pedidos com envio.
+- Gestão > MLTN / POD guarda link do Drive e endereço de remetente localmente no navegador.
+- Gestão > Encomendas > Preparar MLTN monta automaticamente o resumo da produção.
+- Botões abrem Drive e Melhor Envio.
+
+IMPORTANTE:
+- Frete ainda não é calculado automaticamente nesta versão.
+- Integração direta com a API do Melhor Envio pode ser feita numa segunda etapa, depois de configurar a conta/aplicativo.
+- Não coloque token/senha do Melhor Envio dentro de arquivos públicos do site.

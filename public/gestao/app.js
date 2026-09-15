@@ -87,7 +87,7 @@
   async function loadClients(){const {data,error}=await sb.from('clientes').select('*').order('nome');if(error)throw error;clients=data||[];$('#saleClient').innerHTML='<option value="">Selecione…</option>'+clients.filter(x=>x.ativo).map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('');renderClientList()}
   async function loadCash(){const {data,error}=await sb.from('caixas').select('*').eq('status','aberto').order('aberto_em',{ascending:false}).limit(1);if(error)throw error;openCash=data?.[0]||null;renderCash()}
 
-  const titles={pdv:'Balcão / PDV',caixa:'Caixa',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',eventosportal:'Eventos do Portal',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',config:'Configurações'};
+  const titles={pdv:'Balcão / PDV',caixa:'Caixa',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',mltn:'MLTN / POD',eventosportal:'Eventos do Portal',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',config:'Configurações'};
   function switchView(v){
     $$('.view').forEach(x=>x.classList.add('hidden'));$(`#view-${v}`).classList.remove('hidden');
     $$('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('#pageTitle').textContent=titles[v]||v;
@@ -294,6 +294,33 @@ Deseja inativá-lo e removê-lo da loja/balcão?`)){
     }catch(e){toast(errMsg(e),'error')}
   };
 
+  // MLTN / POD
+  const MLTN_CFG_KEY='cahk-mltn-config-v1';
+  function loadMltnConfig(){
+    let cfg={drive_url:'',sender_address:'Rua Arnaldo Teixeira Lemos, 857 - Jardim Lima - Franca/SP - CEP 14403-108'};
+    try{cfg={...cfg,...JSON.parse(localStorage.getItem(MLTN_CFG_KEY)||'{}')}}catch{}
+    if($('#mltnDriveUrl'))$('#mltnDriveUrl').value=cfg.drive_url||'';
+    if($('#mltnSenderAddress'))$('#mltnSenderAddress').value=cfg.sender_address||'';
+    syncMltnLinks(cfg);return cfg;
+  }
+  function syncMltnLinks(cfg=loadMltnConfig()){
+    for(const id of ['#mltnOpenDrive','#modalOpenDrive']){const a=$(id);if(!a)continue;a.href=cfg.drive_url||'#';a.classList.toggle('disabled-link',!cfg.drive_url);}
+  }
+  $('#mltnConfigForm')?.addEventListener('submit',e=>{e.preventDefault();const cfg={drive_url:$('#mltnDriveUrl').value.trim(),sender_address:$('#mltnSenderAddress').value.trim()};localStorage.setItem(MLTN_CFG_KEY,JSON.stringify(cfg));syncMltnLinks(cfg);toast('Configuração MLTN salva neste navegador')});
+  loadMltnConfig();
+  function parseMltnNote(note){
+    const out={};String(note||'').split('|').map(x=>x.trim()).forEach(part=>{const i=part.indexOf('=');if(i>0)out[part.slice(0,i).trim()]=part.slice(i+1).trim()});return out;
+  }
+  function mltnOrderText(o){
+    const m=parseMltnNote(o.observacao);const cfg=loadMltnConfig();
+    const items=(o.encomenda_itens||[]).map(i=>`- ${Number(i.quantidade)}x ${i.produto_nome}${i.variante_nome?` | ${i.variante_nome}`:''}`).join('\n');
+    const address=m.ENTREGA==='ENVIO'?[m.RUA,m.NUMERO,m.COMPLEMENTO,m.BAIRRO,m.CIDADE,m.UF,m.CEP?`CEP ${m.CEP}`:''].filter(Boolean).join(' - '):'RETIRADA COM O CAHK';
+    return `PEDIDO CAHK / MLTN #${String(o.id).slice(0,8)}\n\nCLIENTE\nNome: ${o.nome||''}\nTelefone: ${o.telefone||''}\nE-mail: ${o.email||''}\nCPF: ${m.CPF||''}\nEntrega: ${m.ENTREGA||''}\nEndereço: ${address}\n\nITENS\n${items}\n\nTotal produtos: ${brl(o.total)}\nObservação do cliente: ${m.OBS||''}\n\nPRODUÇÃO\nDrive das artes: ${cfg.drive_url||'[CONFIGURAR NA ABA MLTN / POD]'}\nRemetente para Melhor Envio: ${cfg.sender_address||''}\n\nCHECKLIST\n[ ] Pagamento confirmado\n[ ] Arte/amostra aprovada\n[ ] Etiqueta Melhor Envio gerada\n[ ] Dados + etiqueta enviados à MLTN\n[ ] Produção confirmada`;
+  }
+  function openMltnOrder(id){const o=ordersCache.find(x=>x.id===id);if(!o)return;$('#mltnOrderText').value=mltnOrderText(o);syncMltnLinks(loadMltnConfig());$('#mltnOrderModal').classList.remove('hidden')}
+  $('#closeMltnModal')?.addEventListener('click',()=>$('#mltnOrderModal').classList.add('hidden'));
+  $('#copyMltnOrder')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('#mltnOrderText').value);toast('Dados do pedido copiados')}catch{$('#mltnOrderText').select();document.execCommand('copy');toast('Dados do pedido copiados')}});
+
   // ENCOMENDAS
   const orderStatusLabel={nova:'Nova',confirmada:'Confirmada',aguardando_pagamento:'Aguardando pagamento',paga:'Paga',pronta:'Pronta',entregue:'Entregue',cancelada:'Cancelada'};
   $('#refreshOrders').onclick=loadOrders;$('#orderStatusFilter').onchange=loadOrders;
@@ -308,10 +335,10 @@ Deseja inativá-lo e removê-lo da loja/balcão?`)){
     $('#ordersList').innerHTML=ordersCache.length?ordersCache.map(o=>{
       const items=(o.encomenda_itens||[]).map(i=>`<li>${Number(i.quantidade).toLocaleString('pt-BR')}× ${esc(i.produto_nome)}${i.variante_nome?` — <strong>${esc(i.variante_nome)}</strong>`:''} <span>${brl(i.total)}</span></li>`).join('');
       const whatsappRaw=String(o.telefone||'').replace(/\D/g,'');const whatsapp=whatsappRaw.startsWith('55')?whatsappRaw:`55${whatsappRaw}`;
-      return `<article class="card order-card"><div class="order-head"><div><div class="muted small">#${esc(String(o.id).slice(0,8))} • ${dt(o.created_at)}</div><h2>${esc(o.nome)}</h2><div class="muted small">${esc(o.telefone||'')}${o.turma?` • ${esc(o.turma)}`:''}${o.email?` • ${esc(o.email)}`:''}</div></div><span class="badge ${o.status==='cancelada'?'danger':o.status==='entregue'?'ok':''}">${esc(orderStatusLabel[o.status]||o.status)}</span></div><ul class="order-items">${items}</ul>${o.observacao?`<div class="order-note">${esc(o.observacao)}</div>`:''}<div class="order-total"><span>Total</span><strong>${brl(o.total)}</strong></div><div class="order-actions"><select data-order-status="${o.id}">${Object.entries(orderStatusLabel).map(([v,l])=>`<option value="${v}" ${v===o.status?'selected':''}>${l}</option>`).join('')}</select><button class="ghost" data-save-order-status="${o.id}">Salvar status</button>${whatsapp?`<a class="ghost button-link" target="_blank" rel="noopener" href="https://wa.me/${whatsapp}">WhatsApp</a>`:''}<button class="primary" data-order-pdv="${o.id}">Carregar no PDV</button></div></article>`;
+      return `<article class="card order-card"><div class="order-head"><div><div class="muted small">#${esc(String(o.id).slice(0,8))} • ${dt(o.created_at)}</div><h2>${esc(o.nome)}</h2><div class="muted small">${esc(o.telefone||'')}${o.turma?` • ${esc(o.turma)}`:''}${o.email?` • ${esc(o.email)}`:''}</div></div><span class="badge ${o.status==='cancelada'?'danger':o.status==='entregue'?'ok':''}">${esc(orderStatusLabel[o.status]||o.status)}</span></div><ul class="order-items">${items}</ul>${o.observacao?`<div class="order-note">${esc(o.observacao)}</div>`:''}<div class="order-total"><span>Total</span><strong>${brl(o.total)}</strong></div><div class="order-actions"><select data-order-status="${o.id}">${Object.entries(orderStatusLabel).map(([v,l])=>`<option value="${v}" ${v===o.status?'selected':''}>${l}</option>`).join('')}</select><button class="ghost" data-save-order-status="${o.id}">Salvar status</button>${whatsapp?`<a class="ghost button-link" target="_blank" rel="noopener" href="https://wa.me/${whatsapp}">WhatsApp</a>`:''}<button class="ghost" data-order-mltn="${o.id}">Preparar MLTN</button><button class="primary" data-order-pdv="${o.id}">Carregar no PDV</button></div></article>`;
     }).join(''):'<div class="card empty">Nenhuma encomenda encontrada.</div>';
     $$('[data-save-order-status]').forEach(b=>b.onclick=()=>saveOrderStatus(b.dataset.saveOrderStatus));
-    $$('[data-order-pdv]').forEach(b=>b.onclick=()=>orderToPdv(b.dataset.orderPdv));
+    $$('[data-order-pdv]').forEach(b=>b.onclick=()=>orderToPdv(b.dataset.orderPdv));$$('[data-order-mltn]').forEach(b=>b.onclick=()=>openMltnOrder(b.dataset.orderMltn));
   }
   async function saveOrderStatus(id){
     const sel=$(`[data-order-status="${id}"]`);if(!sel)return;

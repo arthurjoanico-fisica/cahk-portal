@@ -43,12 +43,32 @@
     $('#storeCartTotal').textContent=brl(cart.reduce((s,x)=>s+x.preco*x.quantidade,0));
   }
   $('#openCart').onclick=()=>$('#storeCart').classList.add('open');$('#closeCart').onclick=()=>$('#storeCart').classList.remove('open');
+
+  function digits(v){return String(v||'').replace(/\D/g,'')}
+  function deliveryIsShipping(){return $('#orderDelivery')?.value==='envio'}
+  function syncShippingFields(){
+    const shipping=deliveryIsShipping();
+    $('#shippingFields')?.classList.toggle('hidden',!shipping);
+    ['#orderCpf','#orderCep','#orderStreet','#orderNumber','#orderDistrict','#orderCity','#orderState'].forEach(sel=>{const el=$(sel);if(el)el.required=shipping});
+  }
+  $('#orderDelivery').onchange=syncShippingFields;
+  syncShippingFields();
+  function buildMltnNote(){
+    const userNote=$('#orderNote').value.trim();
+    const delivery=$('#orderDelivery').value;
+    const parts=['[MLTN]',`ENTREGA=${delivery.toUpperCase()}`];
+    if(delivery==='envio'){
+      parts.push(`CPF=${digits($('#orderCpf').value)}`,`CEP=${digits($('#orderCep').value)}`,`RUA=${$('#orderStreet').value.trim()}`,`NUMERO=${$('#orderNumber').value.trim()}`,`COMPLEMENTO=${$('#orderComplement').value.trim()}`,`BAIRRO=${$('#orderDistrict').value.trim()}`,`CIDADE=${$('#orderCity').value.trim()}`,`UF=${$('#orderState').value.trim().toUpperCase()}`);
+    }
+    if(userNote)parts.push(`OBS=${userNote.replace(/\|/g,'/')}`);
+    return parts.join(' | ');
+  }
   $('#orderForm').onsubmit=async e=>{
-    e.preventDefault();if(!cart.length)return toast('Adicione pelo menos um produto','error');
+    e.preventDefault();if(!cart.length)return toast('Adicione pelo menos um produto','error');if(deliveryIsShipping()&&digits($('#orderCpf').value).length!==11)return toast('Confira o CPF','error');if(deliveryIsShipping()&&digits($('#orderCep').value).length!==8)return toast('Confira o CEP','error');
     const btn=$('#sendOrder');btn.disabled=true;btn.textContent='Enviando…';
     try{
-      const data=await api('create_order',{customer:{nome:$('#orderName').value.trim(),telefone:$('#orderPhone').value.trim(),email:$('#orderEmail').value.trim()||null,turma:$('#orderClass').value.trim()||null,observacao:$('#orderNote').value.trim()||null},items:cart.map(x=>({produto_id:x.produto_id,variante_id:x.variante_id,quantidade:x.quantidade}))});
-      cart=[];renderCart();$('#orderForm').reset();$('#orderForm').classList.add('hidden');const id=String(data.order?.id||'').slice(0,8);$('#orderSuccess').classList.remove('hidden');$('#orderSuccess').innerHTML=`<strong>Encomenda enviada!</strong><p>Seu código é <strong>#${esc(id)}</strong>. A gestão do CAHK recebeu o pedido e poderá entrar em contato pelo telefone informado.</p>`;
+      const data=await api('create_order',{customer:{nome:$('#orderName').value.trim(),telefone:$('#orderPhone').value.trim(),email:$('#orderEmail').value.trim()||null,turma:$('#orderClass').value.trim()||null,observacao:buildMltnNote()},items:cart.map(x=>({produto_id:x.produto_id,variante_id:x.variante_id,quantidade:x.quantidade}))});
+      cart=[];renderCart();$('#orderForm').reset();syncShippingFields();$('#orderForm').classList.add('hidden');const id=String(data.order?.id||'').slice(0,8);$('#orderSuccess').classList.remove('hidden');$('#orderSuccess').innerHTML=`<strong>Encomenda enviada!</strong><p>Seu código é <strong>#${esc(id)}</strong>. A gestão do CAHK recebeu o pedido e poderá entrar em contato pelo telefone informado.</p>`;
     }catch(e){toast(errMsg(e),'error')}finally{btn.disabled=false;btn.textContent='Enviar encomenda'}
   };
   load();

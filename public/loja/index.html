@@ -22,7 +22,7 @@
     <div>
       <div class="store-kicker">Centro Acadêmico Hugo Kremer</div>
       <h1>Loja CAHK</h1>
-      <p class="muted">Camisetas, moletons e outros produtos do CAHK.</p>
+      <p class="muted">Produtos personalizados do CAHK, produzidos sob demanda e enviados após confirmação.</p>
     </div>
     <button id="openCart" class="primary">Carrinho <span id="cartCount">0</span></button>
   </header>
@@ -45,9 +45,22 @@
         <label>WhatsApp / telefone<input id="orderPhone" required maxlength="30" inputmode="tel"></label>
         <label>E-mail <span class="muted small">(opcional)</span><input id="orderEmail" type="email" maxlength="160"></label>
         <label>Turma / curso <span class="muted small">(opcional)</span><input id="orderClass" maxlength="80"></label>
+        <label>Forma de entrega<select id="orderDelivery"><option value="envio">Receber no meu endereço</option><option value="retirada">Retirar com o CAHK</option></select></label>
+        <div id="shippingFields" class="shipping-fields">
+          <label>CPF<input id="orderCpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label>
+          <label>CEP<input id="orderCep" inputmode="numeric" maxlength="9" placeholder="00000-000"></label>
+          <label class="span-2">Rua / avenida<input id="orderStreet" maxlength="160"></label>
+          <label>Número<input id="orderNumber" maxlength="20"></label>
+          <label>Complemento <span class="muted small">(opcional)</span><input id="orderComplement" maxlength="80"></label>
+          <label>Bairro<input id="orderDistrict" maxlength="100"></label>
+          <label>Cidade<input id="orderCity" maxlength="100"></label>
+          <label>UF<input id="orderState" maxlength="2" placeholder="PR"></label>
+        </div>
+        <div class="pod-note"><strong>Produção sob demanda</strong><span>O total acima é dos produtos. Quando houver envio, o frete será confirmado pela gestão antes do pagamento/produção.</span></div>
         <label>Observação <span class="muted small">(opcional)</span><textarea id="orderNote" rows="3" maxlength="500"></textarea></label>
+        <label class="check-line store-confirm"><input id="orderConfirm" type="checkbox" required>Conferi tamanho, dados de contato e endereço antes de enviar.</label>
         <button id="sendOrder" class="primary large" type="submit">Enviar encomenda</button>
-        <p class="muted small">A encomenda será enviada para a gestão do CAHK. Ela não é registrada como venda até ser confirmada pela gestão.</p>
+        <p class="muted small">A encomenda vai para a gestão do CAHK. A produção só é iniciada depois da confirmação do pedido.</p>
       </form>
       <div id="orderSuccess" class="success-box hidden"></div>
     </aside>
