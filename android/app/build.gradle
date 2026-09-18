@@ -1,0 +1,32 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'app.cahk.portal'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'app.cahk.portal'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    signingConfigs {
+        release {
+            def kp = System.getenv('CAHK_KEYSTORE_PATH')
+            if (kp != null && !kp.isEmpty()) storeFile file(kp)
+            storePassword System.getenv('CAHK_KEYSTORE_PASSWORD') ?: ''
+            keyAlias System.getenv('CAHK_KEY_ALIAS') ?: 'cahk'
+            keyPassword System.getenv('CAHK_KEY_PASSWORD') ?: ''
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
+        }
+    }
+}
