@@ -1,22 +1,32 @@
-PORTAL CAHK v5.0 — EVENTOS + LOJA PELO CAIXA
+CAHK PORTAL v6.0 — SISTEMA COMPLETO
 
-O backend já foi preparado no Supabase.
+O BACKEND JÁ FOI PREPARADO NO SUPABASE.
 
 PARA PUBLICAR:
-1. Extraia este ZIP.
-2. No GitHub, abra o repositório cahk-portal.
-3. Substitua os arquivos existentes pelo conteúdo deste pacote, preservando a estrutura.
-4. Faça o commit na branch main.
-5. Aguarde o deploy do Cloudflare.
-6. Confira /build.txt — deve mostrar: CAHK Portal build 5.0-eventos-loja-admin
-7. Faça Ctrl + F5.
+1. Extraia o arquivo ZIP.
+2. Abra o repositório GitHub cahk-portal.
+3. Entre na raiz do repositório.
+4. Envie/substitua OS ARQUIVOS E PASTAS QUE ESTÃO DENTRO DO ZIP.
+   Não envie a pasta cahk_v60work como uma pasta adicional.
+5. Faça o commit na branch main.
+6. Aguarde o deploy automático do Cloudflare Worker.
+7. Abra https://cahk.app/build.txt
+8. Confirme: CAHK Portal build 6.0-sistema-completo
+9. Faça Ctrl + F5 ou abra uma aba anônima caso o navegador mantenha cache antigo.
 
-NOVO NA GESTÃO:
-- Aba "Eventos do Portal": título, data, horário, local, descrição, link, imagem, destaque e publicar/pausar.
-- Aba "Produtos / Loja": continua cadastrando os produtos do Caixa e agora permite enviar a foto diretamente, marcar "Mostrar na loja", definir pronta entrega/sob encomenda, prazo e tamanhos.
+NOVOS MÓDULOS PRINCIPAIS:
+- Inventário físico
+- Avisos públicos
+- Agenda pública
+- Transparência
+- Usuários e permissões
+- Auditoria
+- Backup JSON
+- Fluxo MLTN ampliado
+- Biblioteca e IC com metadados ampliados
+- PWA e SEO/social preview
 
-EVENTOS:
-Os eventos publicados aparecem automaticamente na página inicial. Eventos com data passada deixam de aparecer no portal, mas continuam visíveis na administração.
-
-IMAGENS:
-JPG, PNG ou WebP, até 5 MB. São enviadas para o armazenamento do CAHK no Supabase.
+OBSERVAÇÕES:
+- O backup disponível na Gestão é uma exportação completa em JSON sob demanda.
+- A integração MLTN organiza o fluxo de produção, Drive, referência, etiqueta e rastreio. Compra automática de frete/etiqueta depende de credenciais/API externas e não está ativada nesta versão.
+- Convites de novos usuários usam o sistema de e-mail do Supabase Auth.

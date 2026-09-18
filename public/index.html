@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>CAHK — Centro Acadêmico Hugo Kremer</title>
   <meta name="description" content="Rádio, loja, eventos, contatos e acessos do Centro Acadêmico Hugo Kremer — Física UFPR.">
-  <meta name="cahk-build" content="5.8-campus-busca-dashboard">
+  <meta name="cahk-build" content="6.0-sistema-completo">
   <script>try{const t=localStorage.getItem('cahk-theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}</script>
-  <link rel="stylesheet" href="/portal-v5.css?v=5.8">
+  <link rel="stylesheet" href="/portal-v5.css?v=6.0">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
   <meta name="theme-color" content="#5b2bbf">
-</head>
+<meta property="og:title" content="CAHK — Centro Acadêmico Hugo Kremer"><meta property="og:description" content="Rádio, loja, eventos, contatos e acessos do Centro Acadêmico Hugo Kremer — Física UFPR."><meta property="og:type" content="website"><meta property="og:url" content="https://cahk.app/"><meta property="og:image" content="https://cahk.app/assets/cahk-mascote.png"><meta name="twitter:card" content="summary_large_image"></head>
 <body>
   <header class="site-header">
     <div class="nav-shell">
@@ -35,7 +35,9 @@
         <a href="/biblioteca/">Biblioteca</a>
         <a href="/projetos/">Projetos</a>
         <a href="/vida-campus/">Vida no Campus</a>
+        <a href="/agenda/">Agenda</a>
         <a href="#eventos">Eventos</a>
+        <a href="/transparencia/">Transparência</a>
         <a href="/historia/">História</a>
         <a href="/equipe/">Gestão atual</a>
       </nav>
@@ -70,6 +72,14 @@
       <div class="hero-visual" aria-label="Mascote do Centro Acadêmico Hugo Kremer">
         <img src="/assets/cahk-mascote.png?v=3.2" alt="Mascote do CAHK">
       </div>
+    </section>
+
+
+    <section class="notice-section section-shell" id="avisos" aria-labelledby="avisos-title">
+      <div class="section-heading-row notice-heading">
+        <div class="section-kicker"><span></span><h2 id="avisos-title">Avisos do CAHK</h2></div>
+      </div>
+      <div id="noticeList" class="notice-list"><div class="notice-empty">Carregando avisos…</div></div>
     </section>
 
     <section class="services section-shell" id="servicos" aria-labelledby="servicos-title">
@@ -117,6 +127,16 @@
           <div><h3>Eventos</h3><p>Fique por dentro de palestras, assembleias e atividades do CAHK.</p><strong>Ver eventos <span>→</span></strong></div>
         </a>
 
+        <a class="service-card" href="/agenda/">
+          <div class="service-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3v3M18 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="M8 12h8M8 16h5"/></svg></div>
+          <div><h3>Agenda</h3><p>Calendário de eventos, assembleias, aulões e atividades.</p><strong>Abrir agenda <span>→</span></strong></div>
+        </a>
+
+        <a class="service-card" href="/transparencia/">
+          <div class="service-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 11h6M9 15h6"/></svg></div>
+          <div><h3>Transparência</h3><p>Prestação de contas, documentos, atas e registros públicos.</p><strong>Ver documentos <span>→</span></strong></div>
+        </a>
+
         <a class="service-card" href="#contatos">
           <div class="service-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.3 9.3 0 0 1-4-.9L3 21l1.8-4.5A8.5 8.5 0 1 1 21 11.5Z"/></svg>
@@ -130,7 +150,7 @@
       <div class="events-column">
         <div class="section-heading-row">
           <div class="section-kicker"><span></span><h2 id="eventos-title">Próximos eventos</h2></div>
-          <a class="text-link" href="https://www.instagram.com/cahk.ufpr/" target="_blank" rel="noopener noreferrer">Ver novidades no Instagram →</a>
+          <a class="text-link" href="/agenda/">Abrir agenda completa →</a>
         </div>
         <div id="events-list" class="events-list" aria-live="polite"></div>
       </div>
@@ -211,6 +231,6 @@
     </div>
   </footer>
 
-  <script src="/portal-v5.js?v=5.8"></script>
-</body>
+  <script src="/portal-v5.js?v=6.0"></script>
+<script src="/pwa.js?v=6.0"></script></body>
 </html>

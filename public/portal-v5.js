@@ -42,6 +42,8 @@
     const historyLink=nav.querySelector('a[href="/historia/"]');
     if(historyLink) nav.insertBefore(link,historyLink); else nav.appendChild(link);
   }
+  const ensureNav=(href,label,before='/historia/')=>{if(!nav||nav.querySelector(`a[href="${href}"]`))return;const a=document.createElement('a');a.href=href;a.textContent=label;const b=nav.querySelector(`a[href="${before}"]`);if(b)nav.insertBefore(a,b);else nav.appendChild(a)};
+  ensureNav('/agenda/','Agenda');ensureNav('/transparencia/','Transparência');
 
   // Busca global do portal.
   const headerActions=document.querySelector('.header-actions');
@@ -59,10 +61,14 @@
     const renderSearch=rows=>{results.innerHTML=rows.length?rows.map(x=>`<a class="search-result" href="${String(x.url||'/').replace(/"/g,'&quot;')}" ${/^https?:/i.test(x.url||'')?'target="_blank" rel="noopener"':''}><span class="search-result-type">${String(x.type||'Resultado')}</span><span><strong>${String(x.title||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}</strong><small>${String(x.subtitle||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}</small></span><span class="search-result-arrow">→</span></a>`).join(''):'<div class="search-empty">Nenhum resultado encontrado.</div>'};
     input.oninput=()=>{clearTimeout(timer);const q=input.value.trim();if(q.length<2){results.innerHTML='<div class="search-empty">Digite pelo menos 2 letras para pesquisar.</div>';return}const my=++seq;results.innerHTML='<div class="search-empty">Pesquisando…</div>';timer=setTimeout(async()=>{try{const r=await fetch(`${SUPABASE_URL}/functions/v1/portal-public`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({action:'search',q})});const d=await r.json();if(my!==seq)return;if(!r.ok||d.error)throw new Error(d.error||'Erro');renderSearch(d.results||[])}catch(e){if(my===seq)results.innerHTML='<div class="search-empty">Não foi possível pesquisar agora.</div>'}},220)};
   }
+  const esc=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  const noticeList=document.querySelector('#noticeList');
+  if(noticeList){(async()=>{try{const r=await fetch(`${SUPABASE_URL}/functions/v1/portal-public`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({action:'notices'})});const d=await r.json();if(!r.ok||d.error)throw new Error(d.error||'Erro');const rows=d.notices||[];noticeList.innerHTML=rows.length?rows.map(n=>`<article class="notice-card ${esc(n.level||'info')}"><span class="notice-dot"></span><div><h3>${esc(n.title)}</h3>${n.body?`<p>${esc(n.body)}</p>`:''}</div>${n.link_url?`<a href="${esc(n.link_url)}" ${/^https?:/i.test(n.link_url)?'target="_blank" rel="noopener"':''}>${esc(n.link_label||'Saiba mais')} →</a>`:''}</article>`).join(''):'<div class="notice-empty">Nenhum aviso ativo no momento.</div>'}catch(e){noticeList.innerHTML='<div class="notice-empty">Avisos temporariamente indisponíveis.</div>'}})()}
+  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))}
   const list=document.querySelector('#events-list');
   if(!list) return;
 
-  const esc=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  const escEvents=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const month=d=>new Date(`${d}T12:00:00`).toLocaleDateString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
   const day=d=>String(new Date(`${d}T12:00:00`).getDate()).padStart(2,'0');
   const time=t=>t?String(t).slice(0,5).replace(':','h'):'';
@@ -89,9 +95,9 @@
       const url=ev.event_url||'#eventos';
       const external=/^https?:\/\//i.test(url)?' target="_blank" rel="noopener noreferrer"':'';
       const cover=ev.image_url
-        ? `<div class="event-cover"><img src="${esc(ev.image_url)}" alt="${esc(ev.title)}" loading="lazy"><div class="event-cover-date"><strong>${day(ev.event_date)}</strong><span>${month(ev.event_date)}</span></div></div>`
+        ? `<div class="event-cover"><img src="${escEvents(ev.image_url)}" alt="${escEvents(ev.title)}" loading="lazy"><div class="event-cover-date"><strong>${day(ev.event_date)}</strong><span>${month(ev.event_date)}</span></div></div>`
         : `<div class="event-cover no-image">CAHK<div class="event-cover-date"><strong>${day(ev.event_date)}</strong><span>${month(ev.event_date)}</span></div></div>`;
-      return `<a class="event-card-v5" href="${esc(url)}"${external}>${cover}<div class="event-card-body"><h3>${esc(ev.title)}</h3><div class="event-meta">${ev.place?`<span>⌖ ${esc(ev.place)}</span>`:''}${ev.start_time?`<span>◷ ${esc(time(ev.start_time))}</span>`:''}</div>${ev.description?`<p class="event-desc">${esc(ev.description)}</p>`:''}${ev.event_url?'<span class="event-action">Ver detalhes →</span>':''}</div></a>`;
+      return `<a class="event-card-v5" href="${escEvents(url)}"${external}>${cover}<div class="event-card-body"><h3>${escEvents(ev.title)}</h3><div class="event-meta">${ev.place?`<span>⌖ ${escEvents(ev.place)}</span>`:''}${ev.start_time?`<span>◷ ${escEvents(time(ev.start_time))}</span>`:''}</div>${ev.description?`<p class="event-desc">${escEvents(ev.description)}</p>`:''}${ev.event_url?'<span class="event-action">Ver detalhes →</span>':''}</div></a>`;
     }).join('');
   }
 

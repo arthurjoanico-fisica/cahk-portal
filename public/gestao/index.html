@@ -40,21 +40,27 @@
       </div>
       <nav id="nav">
         <button data-view="dashboard" class="active">Visão geral</button>
-        <button data-view="pdv">Balcão / PDV</button>
-        <button data-view="caixa">Caixa</button>
-        <button data-view="entrada">Entrada de estoque</button>
-        <button data-view="vendas">Vendas</button>
-        <button data-view="fiado">Fiado</button>
-        <button data-view="encomendas">Encomendas</button>
-        <button data-view="mltn">MLTN / POD</button>
-        <button data-view="eventosportal" data-admin="1">Eventos do Portal</button>
-        <button data-view="biblioteca" data-admin="1">Biblioteca Virtual</button>
-        <button data-view="projetos" data-admin="1">Projetos / IC</button>
-        <button data-view="produtos" data-admin="1">Produtos / Loja</button>
-        <button data-view="vendedores" data-admin="1">Vendedores</button>
-        <button data-view="clientes">Clientes</button>
-        <button data-view="relatorios" data-admin="1">Relatórios</button>
-        <button data-view="config" data-admin="1">Configurações</button>
+        <button data-view="pdv" data-perm="pdv">Balcão / PDV</button>
+        <button data-view="caixa" data-perm="cash">Caixa</button>
+        <button data-view="entrada" data-perm="stock">Entrada de estoque</button>
+        <button data-view="inventario" data-perm="inventory">Inventário físico</button>
+        <button data-view="vendas" data-perm="sales">Vendas</button>
+        <button data-view="fiado" data-perm="fiado">Fiado</button>
+        <button data-view="encomendas" data-perm="orders">Encomendas</button>
+        <button data-view="mltn" data-perm="mltn">MLTN / POD</button>
+        <button data-view="eventosportal" data-perm="events">Eventos do Portal</button>
+        <button data-view="avisos" data-perm="notices">Avisos do Portal</button>
+        <button data-view="biblioteca" data-perm="library">Biblioteca Virtual</button>
+        <button data-view="projetos" data-perm="projects">Projetos / IC</button>
+        <button data-view="produtos" data-perm="products">Produtos / Loja</button>
+        <button data-view="vendedores" data-perm="pdv">Vendedores</button>
+        <button data-view="clientes" data-perm="clients">Clientes</button>
+        <button data-view="relatorios" data-perm="reports">Relatórios</button>
+        <button data-view="transparencia" data-perm="transparency">Transparência</button>
+        <button data-view="usuarios" data-perm="users">Usuários e permissões</button>
+        <button data-view="auditoria" data-perm="audit">Registro de alterações</button>
+        <button data-view="backup" data-perm="backup">Backup / Exportação</button>
+        <button data-view="config" data-perm="config">Configurações</button>
       </nav>
       <div class="sidebar-footer">
         <div id="userName"></div>
@@ -78,8 +84,9 @@
         </div>
         <div class="grid-2 dashboard-grid">
           <div class="card"><h2>Portal e comunidade</h2><div id="dashboardPortal" class="compact-list"></div></div>
-          <div class="card"><h2>Atalhos</h2><div class="dashboard-actions"><button class="primary" data-dash-view="pdv">Nova venda</button><button class="ghost" data-dash-view="entrada">Dar entrada</button><button class="ghost" data-dash-view="encomendas">Encomendas</button><button class="ghost" data-dash-view="biblioteca">Biblioteca</button><a class="ghost button-link" href="/" target="_blank">Abrir portal</a></div></div>
+          <div class="card"><h2>Validades próximas</h2><div id="dashboardExpiry" class="compact-list"><div class="empty">Carregando…</div></div></div>
         </div>
+        <div class="card"><h2>Atalhos</h2><div class="dashboard-actions"><button class="primary" data-dash-view="pdv">Nova venda</button><button class="ghost" data-dash-view="entrada">Dar entrada</button><button class="ghost" data-dash-view="inventario">Inventário</button><button class="ghost" data-dash-view="encomendas">Encomendas</button><button class="ghost" data-dash-view="biblioteca">Biblioteca</button><a class="ghost button-link" href="/" target="_blank">Abrir portal</a></div></div>
       </section>
 
       <section id="view-pdv" class="view hidden">
@@ -137,6 +144,14 @@
         </div>
       </section>
 
+      <section id="view-inventario" class="view hidden">
+        <div class="grid-2">
+          <div class="card"><h2>Novo inventário físico</h2><p class="muted small">Cria uma fotografia do estoque atual para você conferir produto por produto.</p><form id="inventoryCreateForm" class="form-grid"><label class="span-2">Nome<input id="inventoryName" placeholder="Ex.: Inventário setembro/2026"></label><label class="span-2">Observação<input id="inventoryNote" placeholder="Opcional"></label><div class="span-2"><button class="primary" type="submit">Iniciar inventário</button></div></form></div>
+          <div class="card"><div class="section-head"><div><h2>Inventários</h2><p class="muted small">Abertos, concluídos e cancelados.</p></div><button id="refreshInventory" class="ghost" type="button">Atualizar</button></div><div id="inventoryList" class="compact-list"></div></div>
+        </div>
+        <div id="inventoryWorkspace" class="card hidden"><div class="section-head wrap"><div><h2 id="inventoryWorkspaceTitle">Contagem</h2><p id="inventoryWorkspaceMeta" class="muted small"></p></div><div class="row"><button id="inventorySaveAll" class="ghost" type="button">Salvar contagens</button><button id="inventoryClose" class="primary" type="button">Fechar e aplicar diferenças</button><button id="inventoryCancel" class="danger" type="button">Cancelar inventário</button></div></div><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Sistema</th><th>Contagem física</th><th>Diferença</th><th>Observação</th></tr></thead><tbody id="inventoryItems"></tbody></table></div></div>
+      </section>
+
       <section id="view-vendas" class="view hidden">
         <div class="card">
           <div class="section-head wrap"><h2>Histórico de vendas</h2><div class="row"><input id="salesDate" type="date"><button id="refreshSales" class="ghost">Atualizar</button></div></div>
@@ -186,9 +201,9 @@
             <form id="mltnConfigForm" class="form-grid">
               <label class="span-2">Pasta principal do Google Drive<input id="mltnDriveUrl" type="url" placeholder="https://drive.google.com/..."><span class="muted small">Use a pasta com estampas, mockups e especificações aprovadas de cada produto.</span></label>
               <label class="span-2">Endereço do remetente MLTN<textarea id="mltnSenderAddress" rows="3">Rua Arnaldo Teixeira Lemos, 857 - Jardim Lima - Franca/SP - CEP 14403-108</textarea></label>
-              <div class="row span-2"><button class="primary" type="submit">Salvar neste navegador</button><a id="mltnOpenDrive" class="ghost button-link" target="_blank" rel="noopener">Abrir Drive</a><a class="ghost button-link" href="https://melhorenvio.com.br/" target="_blank" rel="noopener">Abrir Melhor Envio</a></div>
+              <div class="row span-2"><button class="primary" type="submit">Salvar configuração</button><a id="mltnOpenDrive" class="ghost button-link" target="_blank" rel="noopener">Abrir Drive</a><a class="ghost button-link" href="https://melhorenvio.com.br/" target="_blank" rel="noopener">Abrir Melhor Envio</a></div>
             </form>
-            <p class="muted small">Esses dados ficam somente neste navegador da gestão. Nenhum token ou senha é salvo no site.</p>
+            <p class="muted small">A configuração é compartilhada com a gestão. Nenhum token ou senha do Melhor Envio é salvo no site.</p>
           </div>
           <div class="card">
             <h2>Checklist para começar</h2>
@@ -247,6 +262,10 @@
         </div>
       </section>
 
+      <section id="view-avisos" class="view hidden">
+        <div class="grid-2"><div class="card"><h2>Aviso do Portal</h2><form id="noticeForm" class="form-grid"><input id="noticeId" type="hidden"><label class="span-2">Título<input id="noticeTitle" required maxlength="180"></label><label>Nível<select id="noticeLevel"><option value="info">Informativo</option><option value="important">Importante</option><option value="urgent">Urgente</option></select></label><label>Ordem<input id="noticeOrder" type="number" value="0"></label><label class="span-2">Texto<textarea id="noticeBody" rows="4" maxlength="3000"></textarea></label><label>Início<input id="noticeStart" type="datetime-local"></label><label>Fim<input id="noticeEnd" type="datetime-local"></label><label>Texto do botão<input id="noticeLinkLabel" placeholder="Saiba mais"></label><label>Link<input id="noticeLink" type="url" placeholder="https://..."></label><label class="check-line"><input id="noticeActive" type="checkbox" checked>Publicado</label><label class="check-line"><input id="noticePinned" type="checkbox">Fixar primeiro</label><div class="row span-2"><button class="primary" type="submit">Salvar aviso</button><button id="noticeClear" class="ghost" type="button">Novo / limpar</button></div></form></div><div class="card"><div class="section-head"><h2>Avisos cadastrados</h2><button id="noticeRefresh" class="ghost" type="button">Atualizar</button></div><div id="noticeAdminList" class="compact-list"></div></div></div>
+      </section>
+
       <section id="view-biblioteca" class="view hidden">
         <div class="grid-2">
           <div class="card">
@@ -258,6 +277,11 @@
               <label>Disciplina<input id="libraryDiscipline" maxlength="120" required placeholder="Ex.: Física 1"></label>
               <label>Tipo<select id="libraryType"><option value="livro">Livro</option><option value="apostila">Apostila</option><option value="artigo">Artigo</option><option value="lista">Lista</option><option value="outro">Outro</option></select></label>
               <label>Ano da publicação<input id="libraryYear" type="number" min="1500" max="2200"></label>
+              <label>Edição<input id="libraryEdition" maxlength="120" placeholder="Ex.: 10ª edição"></label>
+              <label>ISBN<input id="libraryIsbn" maxlength="80"></label>
+              <label>DOI<input id="libraryDoi" maxlength="220"></label>
+              <label>Professor relacionado<input id="libraryProfessor" maxlength="220"></label>
+              <label>Semestre / período<input id="librarySemester" maxlength="80" placeholder="Ex.: 2º período"></label>
               <label class="span-2">Descrição<textarea id="libraryDescription" rows="3" maxlength="4000"></textarea></label>
               <label class="span-2">Capa / miniatura<input id="libraryCoverFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">JPG, PNG ou WebP, até 5 MB.</span></label>
               <div id="libraryCoverPreview" class="media-preview span-2 hidden"></div>
@@ -283,17 +307,17 @@
               <input id="projectId" type="hidden"><input id="projectImageUrl" type="hidden">
               <label class="span-2">Título do projeto<input id="projectTitle" maxlength="260" required></label>
               <label>Estudante<input id="projectStudent" maxlength="220"></label>
-              <label>Área / linha de pesquisa<input id="projectArea" maxlength="180" placeholder="Ex.: Matéria Condensada"></label>
+              <label>Área / linha de pesquisa<input id="projectArea" maxlength="180" placeholder="Ex.: Matéria Condensada"></label><label>Laboratório / grupo<input id="projectLaboratory" maxlength="220"></label>
               <label>Orientador(a)<input id="projectAdvisor" maxlength="220"></label>
               <label>Coorientador(a)<input id="projectCoadvisor" maxlength="220"></label>
               <label>Ano inicial<input id="projectYearStart" type="number" min="1900" max="2200"></label>
               <label>Ano final<input id="projectYearEnd" type="number" min="1900" max="2200" placeholder="Deixe vazio se em andamento"></label>
               <label>Status<select id="projectStatus"><option value="em_andamento">Em andamento</option><option value="concluida">Concluída</option><option value="pausada">Pausada</option></select></label>
               <label>Ordem<input id="projectOrder" type="number" step="1" value="0"></label>
-              <label class="span-2">Descrição<textarea id="projectDescription" rows="5" maxlength="5000"></textarea></label>
+              <label class="span-2">Palavras-chave<input id="projectKeywords" maxlength="500" placeholder="BFO, filmes finos, sensores"></label><label class="span-2">Financiamento / bolsa<input id="projectFunding" maxlength="300" placeholder="PIBIC, CNPq, Fundação Araucária..."></label><label class="span-2">Descrição<textarea id="projectDescription" rows="5" maxlength="5000"></textarea></label>
               <label class="span-2">Imagem do projeto<input id="projectImageFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
               <div id="projectImagePreview" class="media-preview span-2 hidden"></div>
-              <label class="span-2">Link para projeto, laboratório, artigo ou currículo<input id="projectUrl" type="url" placeholder="https://..."></label>
+              <label class="span-2">Link principal do projeto<input id="projectUrl" type="url" placeholder="https://..."></label><label>Lattes<input id="projectLattes" type="url"></label><label>ORCID<input id="projectOrcid" type="url"></label><label>DOI<input id="projectDoi" placeholder="10.xxxx/..."></label><label>E-mail de contato<input id="projectContact" type="email"></label><label class="span-2">Link do pôster / apresentação<input id="projectPoster" type="url"></label>
               <label class="check-line"><input id="projectActive" type="checkbox" checked>Publicado</label>
               <label class="check-line"><input id="projectFeatured" type="checkbox">Destaque</label>
               <div class="row span-2"><button class="primary" type="submit">Salvar projeto</button><button id="clearProject" class="ghost" type="button">Novo / limpar</button></div>
@@ -330,6 +354,7 @@
                   <label>Ordem na loja<input id="pStoreOrder" type="number" step="1" value="0"></label>
                   <label class="check-line"><input id="pStoreFeatured" type="checkbox">Destaque</label>
                 </div>
+                <div class="store-box span-2" style="margin-top:12px"><div class="store-box-head"><div><strong>Produção MLTN</strong><div class="muted small">Vincule o produto à base e à pasta de produção.</div></div><label class="check-line"><input id="pMltnEnabled" type="checkbox">Produzido pela MLTN</label></div><div class="form-grid"><label>Base / modelo MLTN<input id="pMltnBase" placeholder="Ex.: Camiseta Básica"></label><label>Drive específico<input id="pMltnDrive" type="url" placeholder="https://drive.google.com/..."></label><label class="span-2">Observações de produção<textarea id="pMltnNotes" rows="3" placeholder="Cor, área de estampa, tecido, instruções..."></textarea></label></div></div>
                 <div id="variantEditor" class="variant-editor hidden">
                   <div class="section-head"><h3>Variações / tamanhos</h3><button id="addVariant" type="button" class="ghost">Adicionar</button></div>
                   <div id="variantList" class="compact-list"></div>
@@ -383,8 +408,21 @@
           <div id="reportMetrics" class="metric-grid"></div>
         </div>
         <div class="grid-2"><div class="card"><h2>Por pagamento</h2><div id="reportPayments"></div></div><div class="card"><h2>Por vendedor</h2><div id="reportSellers"></div></div></div>
-        <div class="card"><h2>Produtos mais vendidos</h2><div id="reportProducts"></div></div>
+        <div class="card"><h2>Produtos mais vendidos</h2><div id="reportProducts"></div></div><div class="grid-2"><div class="card"><h2>Faturamento por dia</h2><div id="reportDaily" class="bar-chart"></div></div><div class="card"><h2>Margem no período</h2><div id="reportMargin" class="bar-chart"></div></div></div>
       </section>
+
+      <section id="view-transparencia" class="view hidden">
+        <div class="grid-2"><div class="card"><h2>Documento de transparência</h2><form id="transparencyForm" class="form-grid"><input id="transparencyId" type="hidden"><input id="transparencyFileUrl" type="hidden"><label class="span-2">Título<input id="transparencyTitle" required maxlength="220"></label><label>Categoria<input id="transparencyCategory" value="Documento"></label><label>Data de referência<input id="transparencyDate" type="date"></label><label>Valor relacionado (opcional)<input id="transparencyAmount" type="number" step="0.01"></label><label>Ordem<input id="transparencyOrder" type="number" value="0"></label><label class="span-2">Descrição<textarea id="transparencyDescription" rows="4"></textarea></label><label class="span-2">PDF<input id="transparencyFile" type="file" accept="application/pdf,.pdf"></label><label class="span-2">Ou link externo<input id="transparencyExternal" type="url"></label><label class="check-line span-2"><input id="transparencyActive" type="checkbox" checked>Publicado</label><div class="row span-2"><button class="primary" type="submit">Salvar documento</button><button id="transparencyClear" class="ghost" type="button">Novo / limpar</button></div></form></div><div class="card"><div class="section-head"><h2>Documentos publicados</h2><button id="transparencyRefresh" class="ghost" type="button">Atualizar</button></div><div id="transparencyAdminList" class="compact-list"></div></div></div>
+      </section>
+
+      <section id="view-usuarios" class="view hidden">
+        <div class="grid-2"><div class="card"><h2>Convidar usuário</h2><form id="staffInviteForm" class="form-grid"><label class="span-2">Nome<input id="staffInviteName" required></label><label class="span-2">E-mail<input id="staffInviteEmail" type="email" required></label><label class="span-2">Função<select id="staffInviteRole"><option value="caixa">Caixa</option><option value="tesouraria">Tesouraria</option><option value="loja">Loja</option><option value="comunicacao">Comunicação</option><option value="biblioteca">Biblioteca</option><option value="pesquisa">Pesquisa / IC</option><option value="admin">Administrador</option></select></label><div class="span-2"><button class="primary" type="submit">Enviar convite</button></div></form><p class="muted small">Depois, as permissões individuais podem ser ajustadas no usuário.</p></div><div class="card"><div class="section-head"><h2>Equipe com acesso</h2><button id="staffRefresh" class="ghost" type="button">Atualizar</button></div><div id="staffList" class="compact-list"></div></div></div>
+        <div id="staffEditor" class="card hidden"><div class="section-head"><h2>Permissões do usuário</h2><button id="staffEditorClose" class="ghost" type="button">Fechar</button></div><form id="staffEditForm" class="form-grid"><input id="staffEditId" type="hidden"><label>Nome<input id="staffEditName"></label><label>Função<select id="staffEditRole"><option value="caixa">Caixa</option><option value="tesouraria">Tesouraria</option><option value="loja">Loja</option><option value="comunicacao">Comunicação</option><option value="biblioteca">Biblioteca</option><option value="pesquisa">Pesquisa / IC</option><option value="admin">Administrador</option></select></label><label class="check-line span-2"><input id="staffEditActive" type="checkbox" checked>Acesso ativo</label><div class="span-2"><strong>Permissões extras</strong><div id="staffPermissionGrid" class="permission-grid"></div></div><div class="span-2"><button class="primary" type="submit">Salvar acesso</button></div></form></div>
+      </section>
+
+      <section id="view-auditoria" class="view hidden"><div class="card"><div class="section-head wrap"><div><h2>Registro de alterações</h2><p class="muted small">Quem alterou o quê e quando.</p></div><div class="row"><select id="auditEntity"><option value="">Todas as áreas</option></select><button id="auditRefresh" class="ghost" type="button">Atualizar</button></div></div><div id="auditList" class="audit-list"></div></div></section>
+
+      <section id="view-backup" class="view hidden"><div class="grid-2"><div class="card"><h2>Backup completo</h2><p class="muted">Gera um arquivo JSON com produtos, vendas, estoque, encomendas, portal, biblioteca, projetos, inventários e registros administrativos.</p><button id="backupDownload" class="primary" type="button">Baixar backup JSON</button></div><div class="card"><h2>Exportações rápidas</h2><p class="muted">Use os relatórios em CSV para planilhas e o backup completo para arquivamento da gestão.</p><button id="backupReportShortcut" class="ghost" type="button">Ir para Relatórios</button></div></div></section>
 
       <section id="view-config" class="view hidden">
         <div class="card narrow">
@@ -404,13 +442,13 @@
     </main>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=6.0"></script><script src="v6.js?v=6.0"></script>
 
   <div id="mltnOrderModal" class="mltn-modal hidden" role="dialog" aria-modal="true" aria-labelledby="mltnModalTitle">
     <div class="mltn-modal-card">
       <div class="section-head"><div><h2 id="mltnModalTitle">Preparar pedido MLTN</h2><p class="muted small">Resumo para produção e geração da etiqueta.</p></div><button id="closeMltnModal" class="ghost" type="button">Fechar</button></div>
-      <textarea id="mltnOrderText" rows="18" readonly></textarea>
-      <div class="row mltn-modal-actions"><button id="copyMltnOrder" class="primary" type="button">Copiar dados do pedido</button><a id="modalOpenDrive" class="ghost button-link" target="_blank" rel="noopener">Abrir Drive</a><a class="ghost button-link" href="https://melhorenvio.com.br/" target="_blank" rel="noopener">Gerar etiqueta</a></div>
+      <textarea id="mltnOrderText" rows="14" readonly></textarea><div class="form-grid mltn-fulfillment"><input id="mltnEditOrderId" type="hidden"><label>Status da produção<select id="mltnFulfillmentStatus"><option value="aguardando">Aguardando</option><option value="arte">Preparando arte</option><option value="enviado_mltn">Enviado à MLTN</option><option value="producao">Em produção</option><option value="postado">Postado</option><option value="entregue">Entregue</option></select></label><label>Referência MLTN<input id="mltnRef"></label><label class="span-2">Pasta do pedido no Drive<input id="mltnOrderDrive" type="url"></label><label>Transportadora / serviço<input id="mltnShippingService"></label><label>Código de rastreio<input id="mltnTrackingCode"></label><label class="span-2">Link de rastreio<input id="mltnTrackingUrl" type="url"></label><label class="span-2">Link da etiqueta<input id="mltnLabelUrl" type="url"></label><label class="span-2">Notas de produção<textarea id="mltnProductionNotes" rows="3"></textarea></label></div>
+      <div class="row mltn-modal-actions"><button id="saveMltnFulfillment" class="primary" type="button">Salvar produção</button><button id="copyMltnOrder" class="ghost" type="button">Copiar dados do pedido</button><a id="modalOpenDrive" class="ghost button-link" target="_blank" rel="noopener">Abrir Drive</a><a class="ghost button-link" href="https://melhorenvio.com.br/" target="_blank" rel="noopener">Gerar etiqueta</a></div>
     </div>
   </div>
 
