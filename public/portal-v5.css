@@ -30,7 +30,7 @@ svg{display:block}
 .brand-name{text-transform:uppercase;font-size:10px;line-height:1.35;letter-spacing:.14em;color:#31343c;white-space:nowrap}
 .brand-name strong{font-weight:800}
 .main-nav{display:flex;align-items:center;justify-content:center;gap:24px;height:100%}
-.main-nav a{height:100%;display:flex;align-items:center;text-decoration:none;font-size:13px;font-weight:700;position:relative;color:#2d3037}
+.main-nav a{height:100%;display:flex;align-items:center;text-decoration:none;font-size:12.5px;font-weight:700;position:relative;color:#2d3037;white-space:nowrap}
 .main-nav a:after{content:"";position:absolute;bottom:17px;left:0;right:0;margin:auto;width:0;height:2px;background:var(--purple);transition:.18s ease}
 .main-nav a:hover:after,.main-nav a.active:after{width:100%}
 .header-actions{justify-self:end;display:flex;align-items:center;gap:9px;min-width:max-content}
@@ -68,7 +68,7 @@ svg{display:block}
 .section-kicker{display:flex;align-items:center;gap:14px;margin-bottom:16px}
 .section-kicker>span{width:34px;height:2px;background:var(--purple);flex:0 0 auto}
 .section-kicker h2{margin:0;text-transform:uppercase;letter-spacing:.23em;font-size:10px;color:#545b69;font-weight:820}
-.service-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.service-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .service-card{border:1px solid var(--line);border-radius:var(--radius);padding:24px 21px;display:grid;grid-template-columns:50px 1fr;gap:16px;text-decoration:none;background:rgba(255,255,255,.94);box-shadow:var(--shadow);transition:.18s ease;min-height:170px}
 .service-card:hover{transform:translateY(-2px);border-color:#d0c3e8;box-shadow:0 16px 36px rgba(34,28,57,.08)}
 .service-icon{width:46px;height:46px;border:1px solid #d8caed;border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--purple);background:#fcfaff}
@@ -272,3 +272,7 @@ svg{display:block}
 :root[data-theme="dark"] .history-preview-card{background:rgba(26,24,32,.96);border-color:var(--line)}
 @media(max-width:980px){.history-preview-card{align-items:flex-start;flex-direction:column}.history-preview-actions{justify-content:flex-start;min-width:0}}
 @media(max-width:560px){.history-preview-card{padding:21px 18px}.history-preview-actions{width:100%;flex-direction:column}.history-preview-actions .button{width:100%}}
+
+/* v5.7 — Biblioteca Virtual + Projetos */
+@media(max-width:1180px){.service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.service-grid{grid-template-columns:1fr}}

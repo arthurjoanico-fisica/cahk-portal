@@ -44,3 +44,9 @@ Depois do deploy, confirme em `/build.txt`: `CAHK Portal build 4.0-minimal-unifi
 - Na primeira visita, respeita a preferência de tema do sistema operacional.
 - Rádio, Loja e Gestão já usam interface escura por padrão.
 - Marcador de versão: `/build.txt` → `CAHK Portal build 5.3-excluir-produto-modo-escuro`.
+
+
+## v5.7 — Biblioteca, Projetos/IC e Entrada de Estoque
+- Nova Biblioteca Virtual pública com busca, filtro por disciplina e upload de PDF autorizado.
+- Nova página Projetos de Física / IC, administrável pela Gestão.
+- Nova função Entrada de estoque no Caixa CAHK, somando a quantidade recebida e registrando histórico.

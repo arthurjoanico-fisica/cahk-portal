@@ -10,3 +10,6 @@
 
 /* v5.6 — MLTN / POD */
 .mltn-checklist{display:grid;gap:10px;padding-left:22px;color:#d9dee6;line-height:1.45}.mltn-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.drive-tree{white-space:pre-wrap;background:#11161c;border:1px solid #2b3440;border-radius:14px;padding:16px;color:#dfe6ef;line-height:1.65;overflow:auto}.disabled-link{opacity:.45;pointer-events:none}.mltn-modal{position:fixed;inset:0;z-index:200;background:#000a;display:grid;place-items:center;padding:20px}.mltn-modal-card{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:18px;box-shadow:0 30px 90px #000b}.mltn-modal-card textarea{min-height:360px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.85rem;line-height:1.5}.mltn-modal-actions{margin-top:12px;flex-wrap:wrap}@media(max-width:640px){.mltn-modal{padding:8px}.mltn-modal-card{border-radius:14px}.mltn-modal-actions>*{width:100%}}
+
+/* v5.7 — entrada de estoque, biblioteca e IC */
+.stock-current{border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:rgba(90,46,166,.06);font-weight:750}.media-preview img{max-height:220px;object-fit:contain}.compact-item .actions{display:flex;gap:6px;flex-wrap:wrap}

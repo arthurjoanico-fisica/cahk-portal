@@ -41,11 +41,14 @@
       <nav id="nav">
         <button data-view="pdv" class="active">Balcão / PDV</button>
         <button data-view="caixa">Caixa</button>
+        <button data-view="entrada">Entrada de estoque</button>
         <button data-view="vendas">Vendas</button>
         <button data-view="fiado">Fiado</button>
         <button data-view="encomendas">Encomendas</button>
         <button data-view="mltn">MLTN / POD</button>
         <button data-view="eventosportal" data-admin="1">Eventos do Portal</button>
+        <button data-view="biblioteca" data-admin="1">Biblioteca Virtual</button>
+        <button data-view="projetos" data-admin="1">Projetos / IC</button>
         <button data-view="produtos" data-admin="1">Produtos / Loja</button>
         <button data-view="vendedores" data-admin="1">Vendedores</button>
         <button data-view="clientes">Clientes</button>
@@ -99,6 +102,22 @@
           <div class="card"><h2>Abrir / fechar</h2><div id="cashActions"></div></div>
         </div>
         <div class="card"><h2>Resumo do caixa aberto</h2><div id="cashSummary" class="metric-grid"></div></div>
+      </section>
+
+      <section id="view-entrada" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-head"><div><h2>Dar entrada no estoque</h2><p class="muted small">Some a quantidade recebida ao estoque atual sem substituir o valor existente.</p></div></div>
+            <form id="stockEntryForm" class="form-grid">
+              <label class="span-2">Produto<select id="stockEntryProduct" required></select></label>
+              <label>Quantidade que entrou<input id="stockEntryQty" type="number" min="0.001" step="0.001" required placeholder="Ex.: 24"></label>
+              <label>Motivo / origem<input id="stockEntryReason" placeholder="Ex.: Compra, reposição, doação"></label>
+              <div class="stock-current span-2" id="stockEntryCurrent">Selecione um produto.</div>
+              <div class="span-2"><button class="primary" type="submit">Confirmar entrada</button></div>
+            </form>
+          </div>
+          <div class="card"><div class="section-head"><div><h2>Entradas recentes</h2><p class="muted small">Histórico das últimas reposições registradas.</p></div><button id="refreshStockEntries" class="ghost" type="button">Atualizar</button></div><div id="stockEntryHistory" class="compact-list"></div></div>
+        </div>
       </section>
 
       <section id="view-vendas" class="view hidden">
@@ -208,6 +227,62 @@
             <div class="section-head"><div><h2>Eventos cadastrados</h2><p class="muted small">Edite, pause ou exclua eventos do portal.</p></div><button id="refreshEventsAdmin" class="ghost" type="button">Atualizar</button></div>
             <div id="adminEventsList" class="compact-list"></div>
           </div>
+        </div>
+      </section>
+
+      <section id="view-biblioteca" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-head"><div><h2>Biblioteca Virtual</h2><p class="muted small">Cadastre materiais por disciplina e envie a capa e o PDF.</p></div></div>
+            <form id="libraryForm" class="form-grid">
+              <input id="libraryId" type="hidden"><input id="libraryCoverUrl" type="hidden"><input id="libraryPdfUrl" type="hidden">
+              <label class="span-2">Título<input id="libraryTitle" maxlength="220" required></label>
+              <label>Autor / autores<input id="libraryAuthor" maxlength="220"></label>
+              <label>Disciplina<input id="libraryDiscipline" maxlength="120" required placeholder="Ex.: Física 1"></label>
+              <label>Tipo<select id="libraryType"><option value="livro">Livro</option><option value="apostila">Apostila</option><option value="artigo">Artigo</option><option value="lista">Lista</option><option value="outro">Outro</option></select></label>
+              <label>Ano da publicação<input id="libraryYear" type="number" min="1500" max="2200"></label>
+              <label class="span-2">Descrição<textarea id="libraryDescription" rows="3" maxlength="4000"></textarea></label>
+              <label class="span-2">Capa / miniatura<input id="libraryCoverFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">JPG, PNG ou WebP, até 5 MB.</span></label>
+              <div id="libraryCoverPreview" class="media-preview span-2 hidden"></div>
+              <label class="span-2">PDF do material<input id="libraryPdfFile" type="file" accept="application/pdf,.pdf"><span class="muted small">PDF até 50 MB. Use apenas material que o CAHK tenha autorização para disponibilizar.</span></label>
+              <label class="span-2">Ou link externo oficial<input id="libraryExternalUrl" type="url" placeholder="https://..."></label>
+              <label class="span-2">Observação sobre direitos / licença<input id="libraryRightsNote" maxlength="800" placeholder="Ex.: Domínio público, CC BY, autorização do autor..."></label>
+              <label class="check-line span-2"><input id="libraryRights" type="checkbox">Confirmo que o CAHK pode disponibilizar este material</label>
+              <label class="check-line"><input id="libraryActive" type="checkbox" checked>Publicado</label>
+              <label class="check-line"><input id="libraryFeatured" type="checkbox">Destaque</label>
+              <label>Ordem<input id="libraryOrder" type="number" step="1" value="0"></label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar material</button><button id="clearLibrary" class="ghost" type="button">Novo / limpar</button></div>
+            </form>
+          </div>
+          <div class="card"><div class="section-head"><div><h2>Materiais cadastrados</h2><p class="muted small">Edite, pause ou exclua itens da biblioteca.</p></div><button id="refreshLibrary" class="ghost" type="button">Atualizar</button></div><div id="libraryAdminList" class="compact-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-projetos" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-head"><div><h2>Projeto / Iniciação Científica</h2><p class="muted small">Divulgue as pesquisas desenvolvidas pelos estudantes da Física.</p></div></div>
+            <form id="projectForm" class="form-grid">
+              <input id="projectId" type="hidden"><input id="projectImageUrl" type="hidden">
+              <label class="span-2">Título do projeto<input id="projectTitle" maxlength="260" required></label>
+              <label>Estudante<input id="projectStudent" maxlength="220"></label>
+              <label>Área / linha de pesquisa<input id="projectArea" maxlength="180" placeholder="Ex.: Matéria Condensada"></label>
+              <label>Orientador(a)<input id="projectAdvisor" maxlength="220"></label>
+              <label>Coorientador(a)<input id="projectCoadvisor" maxlength="220"></label>
+              <label>Ano inicial<input id="projectYearStart" type="number" min="1900" max="2200"></label>
+              <label>Ano final<input id="projectYearEnd" type="number" min="1900" max="2200" placeholder="Deixe vazio se em andamento"></label>
+              <label>Status<select id="projectStatus"><option value="em_andamento">Em andamento</option><option value="concluida">Concluída</option><option value="pausada">Pausada</option></select></label>
+              <label>Ordem<input id="projectOrder" type="number" step="1" value="0"></label>
+              <label class="span-2">Descrição<textarea id="projectDescription" rows="5" maxlength="5000"></textarea></label>
+              <label class="span-2">Imagem do projeto<input id="projectImageFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
+              <div id="projectImagePreview" class="media-preview span-2 hidden"></div>
+              <label class="span-2">Link para projeto, laboratório, artigo ou currículo<input id="projectUrl" type="url" placeholder="https://..."></label>
+              <label class="check-line"><input id="projectActive" type="checkbox" checked>Publicado</label>
+              <label class="check-line"><input id="projectFeatured" type="checkbox">Destaque</label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar projeto</button><button id="clearProject" class="ghost" type="button">Novo / limpar</button></div>
+            </form>
+          </div>
+          <div class="card"><div class="section-head"><div><h2>Projetos cadastrados</h2><p class="muted small">Gerencie as ICs que aparecem no portal.</p></div><button id="refreshProjects" class="ghost" type="button">Atualizar</button></div><div id="projectAdminList" class="compact-list"></div></div>
         </div>
       </section>
 

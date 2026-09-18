@@ -11,7 +11,7 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const dateInput=d=>{const x=d?new Date(d):new Date(),y=x.getFullYear(),m=String(x.getMonth()+1).padStart(2,'0'),day=String(x.getDate()).padStart(2,'0');return `${y}-${m}-${day}`};
 
-  let session=null,profile=null,products=[],sellers=[],clients=[],config=null,cart=[],openCash=null,salesCache=[],ordersCache=[],productVariants=[],eventsCache=[];
+  let session=null,profile=null,products=[],sellers=[],clients=[],config=null,cart=[],openCash=null,salesCache=[],ordersCache=[],productVariants=[],eventsCache=[],libraryCache=[],projectsCache=[];
 
   function toast(msg,type='ok'){const n=document.createElement('div');n.className=`toast ${type}`;n.textContent=msg;$('#toast').appendChild(n);setTimeout(()=>n.remove(),3500)}
   const errMsg=e=>e?.message||e?.error_description||String(e);
@@ -39,6 +39,16 @@
     const {error}=await sb.storage.from('cahk-public-media').upload(path,file,{contentType:mime,upsert:false,cacheControl:'31536000'});
     if(error)throw error;
     return sb.storage.from('cahk-public-media').getPublicUrl(path).data.publicUrl;
+  }
+  async function uploadPublicPdf(file){
+    if(!file)return null;
+    if(file.size>50*1024*1024)throw new Error('O PDF deve ter até 50 MB');
+    if(String(file.type||'')!=='application/pdf'&&!String(file.name||'').toLowerCase().endsWith('.pdf'))throw new Error('Envie um arquivo PDF');
+    const now=new Date();const ym=`${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}`;
+    const path=`library/${ym}/${crypto.randomUUID()}.pdf`;
+    const {error}=await sb.storage.from('cahk-public-library').upload(path,file,{contentType:'application/pdf',upsert:false,cacheControl:'31536000'});
+    if(error)throw error;
+    return sb.storage.from('cahk-public-library').getPublicUrl(path).data.publicUrl;
   }
   function setMediaPreview(selector,url){
     const el=$(selector);if(!el)return;
@@ -82,16 +92,16 @@
     $('#cfgName').value=config.nome_empresa||'';$('#cfgCnpj').value=config.cnpj||'';$('#cfgPhone').value=config.telefone||'';
     $('#cfgAddress').value=config.endereco||'';$('#cfgFooter').value=config.mensagem_rodape||'';$('#cfgWidth').value=String(config.largura_impressao||80);
   }
-  async function loadProducts(){const {data,error}=await sb.from('produtos').select('*').order('nome');if(error)throw error;products=data||[];renderProducts();renderAdminProducts()}
+  async function loadProducts(){const {data,error}=await sb.from('produtos').select('*').order('nome');if(error)throw error;products=data||[];renderProducts();renderAdminProducts();renderStockEntryProducts()}
   async function loadSellers(){const {data,error}=await sb.from('vendedores').select('*').order('nome');if(error)throw error;sellers=data||[];$('#saleSeller').innerHTML=sellers.filter(x=>x.ativo).map(x=>`<option value="${x.id}">${esc(x.codigo)} — ${esc(x.nome)}</option>`).join('');renderSellerList()}
   async function loadClients(){const {data,error}=await sb.from('clientes').select('*').order('nome');if(error)throw error;clients=data||[];$('#saleClient').innerHTML='<option value="">Selecione…</option>'+clients.filter(x=>x.ativo).map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('');renderClientList()}
   async function loadCash(){const {data,error}=await sb.from('caixas').select('*').eq('status','aberto').order('aberto_em',{ascending:false}).limit(1);if(error)throw error;openCash=data?.[0]||null;renderCash()}
 
-  const titles={pdv:'Balcão / PDV',caixa:'Caixa',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',mltn:'MLTN / POD',eventosportal:'Eventos do Portal',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',config:'Configurações'};
+  const titles={pdv:'Balcão / PDV',caixa:'Caixa',entrada:'Entrada de estoque',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',mltn:'MLTN / POD',eventosportal:'Eventos do Portal',biblioteca:'Biblioteca Virtual',projetos:'Projetos / IC',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',config:'Configurações'};
   function switchView(v){
     $$('.view').forEach(x=>x.classList.add('hidden'));$(`#view-${v}`).classList.remove('hidden');
     $$('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('#pageTitle').textContent=titles[v]||v;
-    if(v==='vendas')loadSales();if(v==='fiado')loadFiado();if(v==='encomendas')loadOrders();if(v==='eventosportal')loadEventsAdmin();if(v==='relatorios')loadReports();if(v==='caixa')loadCash().then(loadCashSummary);
+    if(v==='vendas')loadSales();if(v==='fiado')loadFiado();if(v==='encomendas')loadOrders();if(v==='entrada')loadStockEntryHistory();if(v==='eventosportal')loadEventsAdmin();if(v==='biblioteca')loadLibraryAdmin();if(v==='projetos')loadProjectsAdmin();if(v==='relatorios')loadReports();if(v==='caixa')loadCash().then(loadCashSummary);
   }
   $$('#nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 
@@ -166,6 +176,25 @@
     ].map(([a,b])=>`<div class="metric"><span>${a}</span><strong>${b}</strong></div>`).join('');
   }
 
+  // ENTRADA DE ESTOQUE
+  function renderStockEntryProducts(){
+    const sel=$('#stockEntryProduct');if(!sel)return;
+    const current=sel.value;
+    sel.innerHTML='<option value="">Selecione um produto…</option>'+products.filter(p=>p.ativo).map(p=>`<option value="${p.id}">${esc(p.nome)} — estoque ${Number(p.estoque).toLocaleString('pt-BR')}</option>`).join('');
+    if(products.some(p=>p.id===current&&p.ativo))sel.value=current;
+    syncStockEntryCurrent();
+  }
+  function syncStockEntryCurrent(){const id=$('#stockEntryProduct')?.value,p=products.find(x=>x.id===id),el=$('#stockEntryCurrent');if(!el)return;el.textContent=p?`Estoque atual: ${Number(p.estoque).toLocaleString('pt-BR')}`:'Selecione um produto.'}
+  $('#stockEntryProduct')?.addEventListener('change',syncStockEntryCurrent);
+  $('#refreshStockEntries')?.addEventListener('click',loadStockEntryHistory);
+  $('#stockEntryForm')?.addEventListener('submit',async e=>{e.preventDefault();const produto=$('#stockEntryProduct').value,qty=Number($('#stockEntryQty').value),motivo=$('#stockEntryReason').value.trim()||'Entrada de estoque';if(!produto||!(qty>0))return toast('Selecione o produto e informe uma quantidade maior que zero','error');try{const {data,error}=await sb.rpc('dar_entrada_estoque',{p_produto_id:produto,p_quantidade:qty,p_motivo:motivo});if(error)throw error;toast(`Entrada registrada. Novo estoque: ${Number(data).toLocaleString('pt-BR')}`);$('#stockEntryQty').value='';$('#stockEntryReason').value='';await loadProducts();await loadStockEntryHistory()}catch(e){toast(errMsg(e),'error')}});
+  async function loadStockEntryHistory(){
+    const el=$('#stockEntryHistory');if(!el)return;el.innerHTML='<div class="empty">Carregando…</div>';
+    const {data,error}=await sb.from('movimentacoes_estoque').select('id,quantidade,estoque_anterior,estoque_novo,motivo,created_at,produtos(nome)').eq('tipo','entrada').order('created_at',{ascending:false}).limit(50);
+    if(error){el.innerHTML=`<div class="empty">${esc(errMsg(error))}</div>`;return}
+    el.innerHTML=(data||[]).length?(data||[]).map(x=>`<div class="compact-item"><div><strong>${esc(x.produtos?.nome||'Produto')}</strong><div class="muted small">+${Number(x.quantidade).toLocaleString('pt-BR')} • ${Number(x.estoque_anterior).toLocaleString('pt-BR')} → ${Number(x.estoque_novo).toLocaleString('pt-BR')} • ${dt(x.created_at)}</div>${x.motivo?`<div class="muted small">${esc(x.motivo)}</div>`:''}</div></div>`).join(''):'<div class="empty">Nenhuma entrada registrada.</div>';
+  }
+
   // PRODUTOS / LOJA
   async function loadVariants(productId){
     if(!productId){productVariants=[];renderVariants();return}
@@ -199,8 +228,9 @@
   };
   function renderAdminProducts(){
     if(!$('#adminProducts'))return;
-    $('#adminProducts').innerHTML=products.length?products.map(p=>`<div class="compact-item"><div><strong>${esc(p.nome)}</strong><div class="muted small">${brl(p.preco_venda)} • estoque ${Number(p.estoque).toLocaleString('pt-BR')} • ${p.ativo?'ativo':'inativo'}${p.loja_visivel?' • LOJA':''}</div></div><div class="actions"><button class="ghost" data-edit-product="${p.id}">Editar</button><button class="ghost" data-stock="${p.id}">Ajustar</button><button class="danger" data-delete-product="${p.id}">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhum produto.</div>';
+    $('#adminProducts').innerHTML=products.length?products.map(p=>`<div class="compact-item"><div><strong>${esc(p.nome)}</strong><div class="muted small">${brl(p.preco_venda)} • estoque ${Number(p.estoque).toLocaleString('pt-BR')} • ${p.ativo?'ativo':'inativo'}${p.loja_visivel?' • LOJA':''}</div></div><div class="actions"><button class="ghost" data-edit-product="${p.id}">Editar</button><button class="ghost" data-entry-stock="${p.id}">Entrada</button><button class="ghost" data-stock="${p.id}">Ajustar</button><button class="danger" data-delete-product="${p.id}">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhum produto.</div>';
     $$('[data-edit-product]').forEach(b=>b.onclick=()=>fillProduct(b.dataset.editProduct));
+    $$('[data-entry-stock]').forEach(b=>b.onclick=()=>{switchView('entrada');$('#stockEntryProduct').value=b.dataset.entryStock;syncStockEntryCurrent()});
     $$('[data-stock]').forEach(b=>b.onclick=()=>adjustStock(b.dataset.stock));
     $$('[data-delete-product]').forEach(b=>b.onclick=()=>deleteProduct(b.dataset.deleteProduct));
   }
@@ -293,6 +323,24 @@ Deseja inativá-lo e removê-lo da loja/balcão?`)){
       const data=await portalAdminApi('save_event',{event});toast('Evento salvo no Portal CAHK');await loadEventsAdmin();fillEventForm(data.event.id);
     }catch(e){toast(errMsg(e),'error')}
   };
+
+  // BIBLIOTECA VIRTUAL
+  $('#refreshLibrary')?.addEventListener('click',loadLibraryAdmin);$('#clearLibrary')?.addEventListener('click',clearLibraryForm);
+  async function loadLibraryAdmin(){try{const data=await portalAdminApi('list_library');libraryCache=data.items||[];renderLibraryAdmin()}catch(e){toast(errMsg(e),'error')}}
+  function renderLibraryAdmin(){const el=$('#libraryAdminList');if(!el)return;el.innerHTML=libraryCache.length?libraryCache.map(x=>`<div class="compact-item"><div><strong>${esc(x.title)}</strong><div class="muted small">${esc(x.discipline)} • ${esc(x.material_type)} • ${x.active?'publicado':'pausado'}${x.rights_confirmed?' • direitos confirmados':''}</div></div><div class="actions"><button class="ghost" data-edit-library="${x.id}">Editar</button><button class="danger" data-delete-library="${x.id}">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhum material cadastrado.</div>';$$('[data-edit-library]').forEach(b=>b.onclick=()=>fillLibraryForm(b.dataset.editLibrary));$$('[data-delete-library]').forEach(b=>b.onclick=()=>deleteLibrary(b.dataset.deleteLibrary))}
+  function clearLibraryForm(){$('#libraryForm')?.reset();if(!$('#libraryId'))return;$('#libraryId').value='';$('#libraryCoverUrl').value='';$('#libraryPdfUrl').value='';$('#libraryActive').checked=true;$('#libraryFeatured').checked=false;$('#libraryRights').checked=false;$('#libraryOrder').value='0';setMediaPreview('#libraryCoverPreview','')}
+  function fillLibraryForm(id){const x=libraryCache.find(v=>v.id===id);if(!x)return;$('#libraryId').value=x.id;$('#libraryTitle').value=x.title||'';$('#libraryAuthor').value=x.author||'';$('#libraryDiscipline').value=x.discipline||'';$('#libraryType').value=x.material_type||'livro';$('#libraryYear').value=x.publication_year||'';$('#libraryDescription').value=x.description||'';$('#libraryCoverUrl').value=x.cover_url||'';$('#libraryPdfUrl').value=x.pdf_url||'';$('#libraryExternalUrl').value=x.external_url||'';$('#libraryRightsNote').value=x.rights_note||'';$('#libraryRights').checked=!!x.rights_confirmed;$('#libraryActive').checked=!!x.active;$('#libraryFeatured').checked=!!x.featured;$('#libraryOrder').value=Number(x.display_order||0);$('#libraryCoverFile').value='';$('#libraryPdfFile').value='';setMediaPreview('#libraryCoverPreview',x.cover_url||'');window.scrollTo({top:0,behavior:'smooth'})}
+  async function deleteLibrary(id){const x=libraryCache.find(v=>v.id===id);if(!x||!confirm(`Excluir "${x.title}" da biblioteca?`))return;try{await portalAdminApi('delete_library',{id});toast('Material excluído');clearLibraryForm();await loadLibraryAdmin()}catch(e){toast(errMsg(e),'error')}}
+  $('#libraryForm')?.addEventListener('submit',async e=>{e.preventDefault();try{let cover=$('#libraryCoverUrl').value||null,pdf=$('#libraryPdfUrl').value||null;const coverFile=$('#libraryCoverFile').files?.[0],pdfFile=$('#libraryPdfFile').files?.[0];if(coverFile){toast('Enviando capa…');cover=await uploadPublicImage(coverFile,'library-covers')}if(pdfFile){toast('Enviando PDF…');pdf=await uploadPublicPdf(pdfFile)}const item={id:$('#libraryId').value||undefined,title:$('#libraryTitle').value.trim(),author:$('#libraryAuthor').value.trim()||null,discipline:$('#libraryDiscipline').value.trim(),material_type:$('#libraryType').value,publication_year:$('#libraryYear').value||null,description:$('#libraryDescription').value.trim()||null,cover_url:cover,pdf_url:pdf,external_url:$('#libraryExternalUrl').value.trim()||null,rights_note:$('#libraryRightsNote').value.trim()||null,rights_confirmed:$('#libraryRights').checked,active:$('#libraryActive').checked,featured:$('#libraryFeatured').checked,display_order:Number($('#libraryOrder').value)||0};const data=await portalAdminApi('save_library',{item});toast('Material salvo na Biblioteca Virtual');await loadLibraryAdmin();fillLibraryForm(data.item.id)}catch(e){toast(errMsg(e),'error')}});
+
+  // PROJETOS / IC
+  $('#refreshProjects')?.addEventListener('click',loadProjectsAdmin);$('#clearProject')?.addEventListener('click',clearProjectForm);
+  async function loadProjectsAdmin(){try{const data=await portalAdminApi('list_projects');projectsCache=data.projects||[];renderProjectsAdmin()}catch(e){toast(errMsg(e),'error')}}
+  function renderProjectsAdmin(){const el=$('#projectAdminList');if(!el)return;el.innerHTML=projectsCache.length?projectsCache.map(x=>`<div class="compact-item"><div><strong>${esc(x.title)}</strong><div class="muted small">${esc(x.student_name||'Sem estudante informado')} • ${esc(x.area||'Sem área')} • ${x.status==='em_andamento'?'em andamento':x.status}</div></div><div class="actions"><button class="ghost" data-edit-project="${x.id}">Editar</button><button class="danger" data-delete-project="${x.id}">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhum projeto cadastrado.</div>';$$('[data-edit-project]').forEach(b=>b.onclick=()=>fillProjectForm(b.dataset.editProject));$$('[data-delete-project]').forEach(b=>b.onclick=()=>deleteProject(b.dataset.deleteProject))}
+  function clearProjectForm(){$('#projectForm')?.reset();if(!$('#projectId'))return;$('#projectId').value='';$('#projectImageUrl').value='';$('#projectActive').checked=true;$('#projectFeatured').checked=false;$('#projectStatus').value='em_andamento';$('#projectOrder').value='0';setMediaPreview('#projectImagePreview','')}
+  function fillProjectForm(id){const x=projectsCache.find(v=>v.id===id);if(!x)return;$('#projectId').value=x.id;$('#projectTitle').value=x.title||'';$('#projectStudent').value=x.student_name||'';$('#projectArea').value=x.area||'';$('#projectAdvisor').value=x.advisor||'';$('#projectCoadvisor').value=x.coadvisor||'';$('#projectYearStart').value=x.year_start||'';$('#projectYearEnd').value=x.year_end||'';$('#projectStatus').value=x.status||'em_andamento';$('#projectDescription').value=x.description||'';$('#projectImageUrl').value=x.image_url||'';$('#projectUrl').value=x.project_url||'';$('#projectActive').checked=!!x.active;$('#projectFeatured').checked=!!x.featured;$('#projectOrder').value=Number(x.display_order||0);$('#projectImageFile').value='';setMediaPreview('#projectImagePreview',x.image_url||'');window.scrollTo({top:0,behavior:'smooth'})}
+  async function deleteProject(id){const x=projectsCache.find(v=>v.id===id);if(!x||!confirm(`Excluir o projeto "${x.title}"?`))return;try{await portalAdminApi('delete_project',{id});toast('Projeto excluído');clearProjectForm();await loadProjectsAdmin()}catch(e){toast(errMsg(e),'error')}}
+  $('#projectForm')?.addEventListener('submit',async e=>{e.preventDefault();try{let image=$('#projectImageUrl').value||null;const file=$('#projectImageFile').files?.[0];if(file){toast('Enviando imagem do projeto…');image=await uploadPublicImage(file,'projects')}const project={id:$('#projectId').value||undefined,title:$('#projectTitle').value.trim(),student_name:$('#projectStudent').value.trim()||null,area:$('#projectArea').value.trim()||null,advisor:$('#projectAdvisor').value.trim()||null,coadvisor:$('#projectCoadvisor').value.trim()||null,year_start:$('#projectYearStart').value||null,year_end:$('#projectYearEnd').value||null,status:$('#projectStatus').value,description:$('#projectDescription').value.trim()||null,image_url:image,project_url:$('#projectUrl').value.trim()||null,active:$('#projectActive').checked,featured:$('#projectFeatured').checked,display_order:Number($('#projectOrder').value)||0};const data=await portalAdminApi('save_project',{project});toast('Projeto salvo no portal');await loadProjectsAdmin();fillProjectForm(data.project.id)}catch(e){toast(errMsg(e),'error')}});
 
   // MLTN / POD
   const MLTN_CFG_KEY='cahk-mltn-config-v1';
