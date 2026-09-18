@@ -1,1 +1,1 @@
-CAHK Portal build 6.0.3-install-app
+CAHK Portal build 6.0.4-mobile-safe-header
