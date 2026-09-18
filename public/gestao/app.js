@@ -11,7 +11,7 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const dateInput=d=>{const x=d?new Date(d):new Date(),y=x.getFullYear(),m=String(x.getMonth()+1).padStart(2,'0'),day=String(x.getDate()).padStart(2,'0');return `${y}-${m}-${day}`};
 
-  let session=null,profile=null,products=[],sellers=[],clients=[],config=null,cart=[],openCash=null,salesCache=[],ordersCache=[],productVariants=[],eventsCache=[],libraryCache=[],projectsCache=[];
+  let session=null,profile=null,products=[],sellers=[],clients=[],config=null,cart=[],openCash=null,salesCache=[],ordersCache=[],productVariants=[],eventsCache=[],libraryCache=[],projectsCache=[],reportCache=[];
 
   function toast(msg,type='ok'){const n=document.createElement('div');n.className=`toast ${type}`;n.textContent=msg;$('#toast').appendChild(n);setTimeout(()=>n.remove(),3500)}
   const errMsg=e=>e?.message||e?.error_description||String(e);
@@ -83,7 +83,7 @@
     $$('[data-admin="1"]').forEach(x=>x.classList.toggle('hidden',profile.role!=='admin'));
     showApp();
     await Promise.all([loadConfig(),loadProducts(),loadSellers(),loadClients(),loadCash()]);
-    renderCart();renderProducts();
+    renderCart();renderProducts();loadDashboard();
   }
 
   async function loadConfig(){
@@ -97,13 +97,33 @@
   async function loadClients(){const {data,error}=await sb.from('clientes').select('*').order('nome');if(error)throw error;clients=data||[];$('#saleClient').innerHTML='<option value="">Selecione…</option>'+clients.filter(x=>x.ativo).map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('');renderClientList()}
   async function loadCash(){const {data,error}=await sb.from('caixas').select('*').eq('status','aberto').order('aberto_em',{ascending:false}).limit(1);if(error)throw error;openCash=data?.[0]||null;renderCash()}
 
-  const titles={pdv:'Balcão / PDV',caixa:'Caixa',entrada:'Entrada de estoque',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',mltn:'MLTN / POD',eventosportal:'Eventos do Portal',biblioteca:'Biblioteca Virtual',projetos:'Projetos / IC',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',config:'Configurações'};
+  const titles={dashboard:'Visão geral',pdv:'Balcão / PDV',caixa:'Caixa',entrada:'Entrada de estoque',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',mltn:'MLTN / POD',eventosportal:'Eventos do Portal',biblioteca:'Biblioteca Virtual',projetos:'Projetos / IC',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',config:'Configurações'};
   function switchView(v){
     $$('.view').forEach(x=>x.classList.add('hidden'));$(`#view-${v}`).classList.remove('hidden');
     $$('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('#pageTitle').textContent=titles[v]||v;
-    if(v==='vendas')loadSales();if(v==='fiado')loadFiado();if(v==='encomendas')loadOrders();if(v==='entrada')loadStockEntryHistory();if(v==='eventosportal')loadEventsAdmin();if(v==='biblioteca')loadLibraryAdmin();if(v==='projetos')loadProjectsAdmin();if(v==='relatorios')loadReports();if(v==='caixa')loadCash().then(loadCashSummary);
+    if(v==='dashboard')loadDashboard();if(v==='vendas')loadSales();if(v==='fiado')loadFiado();if(v==='encomendas')loadOrders();if(v==='entrada')loadStockEntryHistory();if(v==='eventosportal')loadEventsAdmin();if(v==='biblioteca')loadLibraryAdmin();if(v==='projetos')loadProjectsAdmin();if(v==='relatorios')loadReports();if(v==='caixa')loadCash().then(loadCashSummary);
   }
   $$('#nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
+
+  // DASHBOARD
+  async function loadDashboard(){
+    const metrics=$('#dashboardMetrics');if(!metrics)return;metrics.innerHTML='<div class="metric"><span>Carregando</span><strong>…</strong></div>';
+    try{
+      const start=new Date();start.setHours(0,0,0,0);const end=new Date(start);end.setDate(end.getDate()+1);
+      const [salesR,ordersR,eventsR,libR,projR]=await Promise.all([
+        sb.from('vw_vendas_resumo').select('*').gte('created_at',start.toISOString()).lt('created_at',end.toISOString()).eq('status','concluida').order('created_at',{ascending:false}),
+        adminApi('list').catch(()=>({orders:[]})),portalAdminApi('list_events').catch(()=>({events:[]})),portalAdminApi('list_library').catch(()=>({items:[]})),portalAdminApi('list_projects').catch(()=>({projects:[]}))
+      ]);
+      if(salesR.error)throw salesR.error;const sales=salesR.data||[],fat=sales.reduce((a,b)=>a+Number(b.total||0),0),low=products.filter(p=>p.ativo&&Number(p.estoque)<=Number(p.estoque_minimo||0)),openOrders=(ordersR.orders||[]).filter(o=>!['entregue','cancelada'].includes(o.status)),stockValue=products.filter(p=>p.ativo).reduce((a,p)=>a+Number(p.estoque||0)*Number(p.preco_compra||0),0);
+      metrics.innerHTML=[['Caixa',openCash?'Aberto':'Fechado'],['Vendas hoje',sales.length],['Faturamento hoje',brl(fat)],['Estoque baixo',low.length],['Encomendas abertas',openOrders.length],['Valor em estoque',brl(stockValue)]].map(([a,b])=>`<div class="metric"><span>${a}</span><strong>${b}</strong></div>`).join('');
+      $('#dashboardLowStock').innerHTML=low.length?low.slice(0,10).map(p=>`<div class="compact-item"><div><strong>${esc(p.nome)}</strong><div class="muted small">${Number(p.estoque).toLocaleString('pt-BR')} em estoque • mínimo ${Number(p.estoque_minimo||0).toLocaleString('pt-BR')}</div></div><button class="ghost" data-dash-entry="${p.id}">Entrada</button></div>`).join(''):'<div class="empty">Estoque em níveis normais.</div>';
+      $$('[data-dash-entry]').forEach(b=>b.onclick=()=>{switchView('entrada');$('#stockEntryProduct').value=b.dataset.dashEntry;syncStockEntryCurrent()});
+      $('#dashboardRecentSales').innerHTML=sales.length?sales.slice(0,8).map(v=>`<div class="compact-item"><div><strong>Venda #${v.id}</strong><div class="muted small">${esc(v.vendedor_nome||'')} • ${dt(v.created_at)}</div></div><strong>${brl(v.total)}</strong></div>`).join(''):'<div class="empty">Nenhuma venda hoje.</div>';
+      const upcoming=(eventsR.events||[]).filter(e=>e.active&&String(e.event_date)>=dateInput()).length,books=(libR.items||[]).filter(x=>x.active).length,projects=(projR.projects||[]).filter(x=>x.active).length;
+      $('#dashboardPortal').innerHTML=`<div class="compact-item"><span>Próximos eventos</span><strong>${upcoming}</strong></div><div class="compact-item"><span>Materiais na biblioteca</span><strong>${books}</strong></div><div class="compact-item"><span>Projetos / IC publicados</span><strong>${projects}</strong></div><div class="compact-item"><span>Encomendas aguardando ação</span><strong>${openOrders.length}</strong></div>`;
+    }catch(e){metrics.innerHTML=`<div class="empty">${esc(errMsg(e))}</div>`}
+  }
+  $('#dashboardGoStock')?.addEventListener('click',()=>switchView('produtos'));$('#dashboardGoSales')?.addEventListener('click',()=>switchView('vendas'));$$('[data-dash-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.dashView));
 
   // PDV
   $('#productSearch').addEventListener('input',renderProducts);
@@ -187,12 +207,12 @@
   function syncStockEntryCurrent(){const id=$('#stockEntryProduct')?.value,p=products.find(x=>x.id===id),el=$('#stockEntryCurrent');if(!el)return;el.textContent=p?`Estoque atual: ${Number(p.estoque).toLocaleString('pt-BR')}`:'Selecione um produto.'}
   $('#stockEntryProduct')?.addEventListener('change',syncStockEntryCurrent);
   $('#refreshStockEntries')?.addEventListener('click',loadStockEntryHistory);
-  $('#stockEntryForm')?.addEventListener('submit',async e=>{e.preventDefault();const produto=$('#stockEntryProduct').value,qty=Number($('#stockEntryQty').value),motivo=$('#stockEntryReason').value.trim()||'Entrada de estoque';if(!produto||!(qty>0))return toast('Selecione o produto e informe uma quantidade maior que zero','error');try{const {data,error}=await sb.rpc('dar_entrada_estoque',{p_produto_id:produto,p_quantidade:qty,p_motivo:motivo});if(error)throw error;toast(`Entrada registrada. Novo estoque: ${Number(data).toLocaleString('pt-BR')}`);$('#stockEntryQty').value='';$('#stockEntryReason').value='';await loadProducts();await loadStockEntryHistory()}catch(e){toast(errMsg(e),'error')}});
+  $('#stockEntryForm')?.addEventListener('submit',async e=>{e.preventDefault();const produto=$('#stockEntryProduct').value,qty=Number($('#stockEntryQty').value),cost=$('#stockEntryCost').value===''?null:Number($('#stockEntryCost').value),supplier=$('#stockEntrySupplier').value.trim()||null,batch=$('#stockEntryBatch').value.trim()||null,expiry=$('#stockEntryExpiry').value||null,motivo=$('#stockEntryReason').value.trim()||'Entrada de estoque';if(!produto||!(qty>0))return toast('Selecione o produto e informe uma quantidade maior que zero','error');try{const {data,error}=await sb.rpc('registrar_entrada_estoque',{p_produto_id:produto,p_quantidade:qty,p_custo_unitario:cost,p_fornecedor:supplier,p_lote:batch,p_validade:expiry,p_motivo:motivo});if(error)throw error;toast(`Entrada registrada. Novo estoque: ${Number(data?.estoque_novo||0).toLocaleString('pt-BR')}`);['#stockEntryQty','#stockEntryCost','#stockEntrySupplier','#stockEntryBatch','#stockEntryExpiry','#stockEntryReason'].forEach(s=>$(s).value='');await loadProducts();await loadStockEntryHistory();loadDashboard()}catch(e){toast(errMsg(e),'error')}});
   async function loadStockEntryHistory(){
     const el=$('#stockEntryHistory');if(!el)return;el.innerHTML='<div class="empty">Carregando…</div>';
-    const {data,error}=await sb.from('movimentacoes_estoque').select('id,quantidade,estoque_anterior,estoque_novo,motivo,created_at,produtos(nome)').eq('tipo','entrada').order('created_at',{ascending:false}).limit(50);
+    const {data,error}=await sb.from('movimentacoes_estoque').select('id,quantidade,estoque_anterior,estoque_novo,motivo,custo_unitario,fornecedor,lote,validade,created_at,produtos(nome)').eq('tipo','entrada').order('created_at',{ascending:false}).limit(50);
     if(error){el.innerHTML=`<div class="empty">${esc(errMsg(error))}</div>`;return}
-    el.innerHTML=(data||[]).length?(data||[]).map(x=>`<div class="compact-item"><div><strong>${esc(x.produtos?.nome||'Produto')}</strong><div class="muted small">+${Number(x.quantidade).toLocaleString('pt-BR')} • ${Number(x.estoque_anterior).toLocaleString('pt-BR')} → ${Number(x.estoque_novo).toLocaleString('pt-BR')} • ${dt(x.created_at)}</div>${x.motivo?`<div class="muted small">${esc(x.motivo)}</div>`:''}</div></div>`).join(''):'<div class="empty">Nenhuma entrada registrada.</div>';
+    el.innerHTML=(data||[]).length?(data||[]).map(x=>`<div class="compact-item"><div><strong>${esc(x.produtos?.nome||'Produto')}</strong><div class="muted small">+${Number(x.quantidade).toLocaleString('pt-BR')} • ${Number(x.estoque_anterior).toLocaleString('pt-BR')} → ${Number(x.estoque_novo).toLocaleString('pt-BR')} • ${dt(x.created_at)}</div>${x.motivo?`<div class="muted small">${esc(x.motivo)}</div>`:''}${x.custo_unitario!=null||x.fornecedor||x.lote||x.validade?`<div class="muted small">${x.custo_unitario!=null?`Custo ${brl(x.custo_unitario)} • `:''}${x.fornecedor?`${esc(x.fornecedor)} • `:''}${x.lote?`lote ${esc(x.lote)} • `:''}${x.validade?`validade ${new Date(`${x.validade}T12:00:00`).toLocaleDateString('pt-BR')}`:''}</div>`:''}</div></div>`).join(''):'<div class="empty">Nenhuma entrada registrada.</div>';
   }
 
   // PRODUTOS / LOJA
@@ -451,11 +471,13 @@ Deseja inativá-lo e removê-lo da loja/balcão?`)){
   async function loadReports(){
     const s=$('#reportStart').value,e=$('#reportEnd').value;if(!s||!e)return;const start=new Date(`${s}T00:00:00`),end=new Date(`${e}T00:00:00`);end.setDate(end.getDate()+1);
     const {data,error}=await sb.from('vw_vendas_resumo').select('*').gte('created_at',start.toISOString()).lt('created_at',end.toISOString()).eq('status','concluida');if(error){toast(errMsg(error),'error');return}
-    const x=data||[],fat=x.reduce((a,b)=>a+Number(b.total),0),custo=x.reduce((a,b)=>a+Number(b.custo_total),0),lucro=x.reduce((a,b)=>a+Number(b.lucro),0);
+    const x=data||[];reportCache=x;const fat=x.reduce((a,b)=>a+Number(b.total),0),custo=x.reduce((a,b)=>a+Number(b.custo_total),0),lucro=x.reduce((a,b)=>a+Number(b.lucro),0);
     $('#reportMetrics').innerHTML=[['Vendas',x.length],['Faturamento',brl(fat)],['Custo',brl(custo)],['Lucro estimado',brl(lucro)],['Ticket médio',brl(x.length?fat/x.length:0)]].map(([a,b])=>`<div class="metric"><span>${a}</span><strong>${b}</strong></div>`).join('');
     const group=(arr,key)=>Object.entries(arr.reduce((o,v)=>{const k=v[key]||'—';o[k]=(o[k]||0)+Number(v.total);return o},{})).sort((a,b)=>b[1]-a[1]),render=rows=>rows.length?rows.map(([k,v])=>`<div class="compact-item"><strong>${esc(k)}</strong><span>${brl(v)}</span></div>`).join(''):'<div class="empty">Sem dados.</div>';
     $('#reportPayments').innerHTML=render(group(x,'tipo_pagamento'));$('#reportSellers').innerHTML=render(group(x,'vendedor_nome'));
+    const ids=x.map(v=>v.id);let items=[];if(ids.length){const r=await sb.from('venda_itens').select('produto_nome,quantidade,total').in('venda_id',ids);if(!r.error)items=r.data||[]}const pg=Object.entries(items.reduce((o,v)=>{const k=v.produto_nome||'—';o[k]??={qty:0,total:0};o[k].qty+=Number(v.quantidade||0);o[k].total+=Number(v.total||0);return o},{})).sort((a,b)=>b[1].qty-a[1].qty);$('#reportProducts').innerHTML=pg.length?pg.slice(0,20).map(([k,v])=>`<div class="compact-item"><div><strong>${esc(k)}</strong><div class="muted small">${Number(v.qty).toLocaleString('pt-BR')} unidade(s)</div></div><span>${brl(v.total)}</span></div>`).join(''):'<div class="empty">Sem dados.</div>';
   }
+  $('#exportReports')?.addEventListener('click',()=>{if(!reportCache.length)return toast('Atualize o relatório antes de exportar','error');const cols=['id','created_at','vendedor_nome','cliente_nome','tipo_pagamento','subtotal','desconto','total','custo_total','lucro'];const csv=[cols.join(';'),...reportCache.map(r=>cols.map(c=>`"${String(r[c]??'').replace(/"/g,'""')}"`).join(';'))].join('\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`relatorio-cahk-${$('#reportStart').value}-${$('#reportEnd').value}.csv`;a.click();URL.revokeObjectURL(a.href)});
 
   // CONFIG
   $('#configForm').onsubmit=async e=>{e.preventDefault();const p={nome_empresa:$('#cfgName').value.trim(),cnpj:$('#cfgCnpj').value.trim()||null,telefone:$('#cfgPhone').value.trim()||null,endereco:$('#cfgAddress').value.trim()||null,mensagem_rodape:$('#cfgFooter').value.trim()||null,largura_impressao:Number($('#cfgWidth').value),updated_at:new Date().toISOString()};try{const{error}=await sb.from('configuracoes').update(p).eq('id',1);if(error)throw error;toast('Configurações salvas');await loadConfig()}catch(e){toast(errMsg(e),'error')}};

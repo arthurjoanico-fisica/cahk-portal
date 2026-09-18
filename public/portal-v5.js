@@ -36,6 +36,29 @@
 
   const SUPABASE_URL='https://ekmzeqnnktdwvzxacbix.supabase.co';
   const KEY='sb_publishable_jeWoJ4G9UXN6ucS3WkZVzA_ytTEzuJz';
+  // Link Vida no Campus em todas as páginas que usam este script.
+  if (nav && !nav.querySelector('a[href="/vida-campus/"]')) {
+    const link=document.createElement('a');link.href='/vida-campus/';link.textContent='Vida no Campus';
+    const historyLink=nav.querySelector('a[href="/historia/"]');
+    if(historyLink) nav.insertBefore(link,historyLink); else nav.appendChild(link);
+  }
+
+  // Busca global do portal.
+  const headerActions=document.querySelector('.header-actions');
+  if(headerActions && !document.querySelector('#globalSearchToggle')){
+    const btn=document.createElement('button');btn.id='globalSearchToggle';btn.className='search-toggle';btn.type='button';btn.title='Pesquisar no portal';btn.setAttribute('aria-label','Pesquisar no portal');
+    btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>';
+    headerActions.insertBefore(btn,headerActions.firstChild);
+    const overlay=document.createElement('div');overlay.className='global-search-backdrop';overlay.id='globalSearchBackdrop';
+    overlay.innerHTML='<div class="global-search-panel" role="dialog" aria-modal="true" aria-label="Busca no Portal CAHK"><div class="global-search-head"><input id="globalSearchInput" type="search" placeholder="Pesquisar livros, projetos, eventos e páginas…" autocomplete="off"><button class="global-search-close" id="globalSearchClose" type="button" aria-label="Fechar">×</button></div><div class="global-search-results" id="globalSearchResults"><div class="search-empty">Digite pelo menos 2 letras para pesquisar.</div></div></div>';
+    document.body.appendChild(overlay);
+    const input=overlay.querySelector('#globalSearchInput'),results=overlay.querySelector('#globalSearchResults');let timer=0,seq=0;
+    const close=()=>{overlay.classList.remove('open');document.body.style.overflow=''};
+    btn.onclick=()=>{overlay.classList.add('open');document.body.style.overflow='hidden';setTimeout(()=>input.focus(),20)};
+    overlay.querySelector('#globalSearchClose').onclick=close;overlay.onclick=e=>{if(e.target===overlay)close()};document.addEventListener('keydown',e=>{if(e.key==='Escape')close();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();btn.click()}});
+    const renderSearch=rows=>{results.innerHTML=rows.length?rows.map(x=>`<a class="search-result" href="${String(x.url||'/').replace(/"/g,'&quot;')}" ${/^https?:/i.test(x.url||'')?'target="_blank" rel="noopener"':''}><span class="search-result-type">${String(x.type||'Resultado')}</span><span><strong>${String(x.title||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}</strong><small>${String(x.subtitle||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}</small></span><span class="search-result-arrow">→</span></a>`).join(''):'<div class="search-empty">Nenhum resultado encontrado.</div>'};
+    input.oninput=()=>{clearTimeout(timer);const q=input.value.trim();if(q.length<2){results.innerHTML='<div class="search-empty">Digite pelo menos 2 letras para pesquisar.</div>';return}const my=++seq;results.innerHTML='<div class="search-empty">Pesquisando…</div>';timer=setTimeout(async()=>{try{const r=await fetch(`${SUPABASE_URL}/functions/v1/portal-public`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({action:'search',q})});const d=await r.json();if(my!==seq)return;if(!r.ok||d.error)throw new Error(d.error||'Erro');renderSearch(d.results||[])}catch(e){if(my===seq)results.innerHTML='<div class="search-empty">Não foi possível pesquisar agora.</div>'}},220)};
+  }
   const list=document.querySelector('#events-list');
   if(!list) return;
 

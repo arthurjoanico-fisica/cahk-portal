@@ -13,3 +13,5 @@
 
 /* v5.7 — entrada de estoque, biblioteca e IC */
 .stock-current{border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:rgba(90,46,166,.06);font-weight:750}.media-preview img{max-height:220px;object-fit:contain}.compact-item .actions{display:flex;gap:6px;flex-wrap:wrap}
+
+.dashboard-grid{margin-top:14px}.dashboard-actions{display:flex;gap:9px;flex-wrap:wrap}.dashboard-actions .button-link{display:inline-flex;align-items:center;text-decoration:none}.stock-current{border:1px dashed var(--line);border-radius:10px;padding:11px;color:var(--muted);font-size:12px}

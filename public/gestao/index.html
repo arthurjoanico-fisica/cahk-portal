@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CaixaFlex 2</title>
+  <title>Gestão CAHK</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="/assets/cahk-subpages-v4.css?v=4.0">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -39,7 +39,8 @@
         <div><strong>Gestão CAHK</strong><span id="companyMini">Área restrita</span></div>
       </div>
       <nav id="nav">
-        <button data-view="pdv" class="active">Balcão / PDV</button>
+        <button data-view="dashboard" class="active">Visão geral</button>
+        <button data-view="pdv">Balcão / PDV</button>
         <button data-view="caixa">Caixa</button>
         <button data-view="entrada">Entrada de estoque</button>
         <button data-view="vendas">Vendas</button>
@@ -65,11 +66,23 @@
 
     <main class="content">
       <header class="topbar">
-        <div><h1 id="pageTitle">Balcão / PDV</h1><div id="cashStatus" class="muted">Verificando caixa…</div></div>
+        <div><h1 id="pageTitle">Visão geral</h1><div id="cashStatus" class="muted">Verificando caixa…</div></div>
         <div id="clock"></div>
       </header>
 
-      <section id="view-pdv" class="view">
+      <section id="view-dashboard" class="view">
+        <div id="dashboardMetrics" class="metric-grid"></div>
+        <div class="grid-2 dashboard-grid">
+          <div class="card"><div class="section-head"><div><h2>Estoque que precisa de atenção</h2><p class="muted small">Produtos zerados ou abaixo do estoque mínimo.</p></div><button class="ghost" id="dashboardGoStock" type="button">Ver produtos</button></div><div id="dashboardLowStock" class="compact-list"></div></div>
+          <div class="card"><div class="section-head"><div><h2>Últimas vendas</h2><p class="muted small">Movimento mais recente do balcão.</p></div><button class="ghost" id="dashboardGoSales" type="button">Ver vendas</button></div><div id="dashboardRecentSales" class="compact-list"></div></div>
+        </div>
+        <div class="grid-2 dashboard-grid">
+          <div class="card"><h2>Portal e comunidade</h2><div id="dashboardPortal" class="compact-list"></div></div>
+          <div class="card"><h2>Atalhos</h2><div class="dashboard-actions"><button class="primary" data-dash-view="pdv">Nova venda</button><button class="ghost" data-dash-view="entrada">Dar entrada</button><button class="ghost" data-dash-view="encomendas">Encomendas</button><button class="ghost" data-dash-view="biblioteca">Biblioteca</button><a class="ghost button-link" href="/" target="_blank">Abrir portal</a></div></div>
+        </div>
+      </section>
+
+      <section id="view-pdv" class="view hidden">
         <div class="pdv-grid">
           <div class="card">
             <div class="section-head"><h2>Produtos</h2><input id="productSearch" placeholder="Buscar nome ou código de barras"></div>
@@ -111,7 +124,11 @@
             <form id="stockEntryForm" class="form-grid">
               <label class="span-2">Produto<select id="stockEntryProduct" required></select></label>
               <label>Quantidade que entrou<input id="stockEntryQty" type="number" min="0.001" step="0.001" required placeholder="Ex.: 24"></label>
-              <label>Motivo / origem<input id="stockEntryReason" placeholder="Ex.: Compra, reposição, doação"></label>
+              <label>Custo unitário (opcional)<input id="stockEntryCost" type="number" min="0" step="0.01" placeholder="Ex.: 2,90"></label>
+              <label>Fornecedor<input id="stockEntrySupplier" placeholder="Ex.: Distribuidora X"></label>
+              <label>Lote<input id="stockEntryBatch" placeholder="Opcional"></label>
+              <label>Validade<input id="stockEntryExpiry" type="date"></label>
+              <label class="span-2">Motivo / origem<input id="stockEntryReason" placeholder="Ex.: Compra, reposição, doação"></label>
               <div class="stock-current span-2" id="stockEntryCurrent">Selecione um produto.</div>
               <div class="span-2"><button class="primary" type="submit">Confirmar entrada</button></div>
             </form>
@@ -362,10 +379,11 @@
 
       <section id="view-relatorios" class="view hidden">
         <div class="card">
-          <div class="section-head wrap"><h2>Resumo por período</h2><div class="row"><input id="reportStart" type="date"><input id="reportEnd" type="date"><button id="refreshReports" class="ghost">Atualizar</button></div></div>
+          <div class="section-head wrap"><h2>Resumo por período</h2><div class="row"><input id="reportStart" type="date"><input id="reportEnd" type="date"><button id="refreshReports" class="ghost">Atualizar</button><button id="exportReports" class="ghost" type="button">Exportar CSV</button></div></div>
           <div id="reportMetrics" class="metric-grid"></div>
         </div>
         <div class="grid-2"><div class="card"><h2>Por pagamento</h2><div id="reportPayments"></div></div><div class="card"><h2>Por vendedor</h2><div id="reportSellers"></div></div></div>
+        <div class="card"><h2>Produtos mais vendidos</h2><div id="reportProducts"></div></div>
       </section>
 
       <section id="view-config" class="view hidden">
