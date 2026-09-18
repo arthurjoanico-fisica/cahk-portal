@@ -11,9 +11,9 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const dateInput=d=>{const x=d?new Date(d):new Date(),y=x.getFullYear(),m=String(x.getMonth()+1).padStart(2,'0'),day=String(x.getDate()).padStart(2,'0');return `${y}-${m}-${day}`};
 
-  let session=null,profile=null,products=[],sellers=[],clients=[],config=null,cart=[],openCash=null,salesCache=[],ordersCache=[],productVariants=[],eventsCache=[],libraryCache=[],projectsCache=[],reportCache=[];
+  let session=null,profile=null,products=[],sellers=[],clients=[],config=null,cart=[],openCash=null,salesCache=[],ordersCache=[],productVariants=[],libraryCache=[],projectsCache=[],reportCache=[];
   const roleLabels={admin:'Administrador',tesouraria:'Tesouraria',caixa:'Caixa',loja:'Loja',comunicacao:'Comunicação',biblioteca:'Biblioteca',pesquisa:'Pesquisa / IC'};
-  const roleDefaults={admin:['*'],tesouraria:['dashboard','pdv','cash','stock','inventory','sales','fiado','clients','reports','backup'],caixa:['dashboard','pdv','cash','sales','fiado','clients'],loja:['dashboard','orders','mltn','products','stock','inventory','clients'],comunicacao:['dashboard','events','notices','transparency'],biblioteca:['dashboard','library'],pesquisa:['dashboard','projects']};
+  const roleDefaults={admin:['*'],tesouraria:['dashboard','pdv','cash','stock','inventory','sales','fiado','clients','reports','backup'],caixa:['dashboard','pdv','cash','sales','fiado','clients'],loja:['dashboard','orders','mltn','products','stock','inventory','clients'],comunicacao:['dashboard','notices','transparency'],biblioteca:['dashboard','library'],pesquisa:['dashboard','projects']};
   const can=code=>!!profile&&(profile.role==='admin'||(roleDefaults[profile.role]||[]).includes(code)||(profile.permissions||[]).includes(code));
 
   function toast(msg,type='ok'){const n=document.createElement('div');n.className=`toast ${type}`;n.textContent=msg;$('#toast').appendChild(n);setTimeout(()=>n.remove(),3500)}
@@ -102,11 +102,11 @@
   async function loadClients(){const {data,error}=await sb.from('clientes').select('*').order('nome');if(error)throw error;clients=data||[];$('#saleClient').innerHTML='<option value="">Selecione…</option>'+clients.filter(x=>x.ativo).map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('');renderClientList()}
   async function loadCash(){const {data,error}=await sb.from('caixas').select('*').eq('status','aberto').order('aberto_em',{ascending:false}).limit(1);if(error)throw error;openCash=data?.[0]||null;renderCash()}
 
-  const titles={dashboard:'Visão geral',pdv:'Balcão / PDV',caixa:'Caixa',entrada:'Entrada de estoque',inventario:'Inventário físico',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',mltn:'MLTN / POD',eventosportal:'Eventos do Portal',avisos:'Avisos do Portal',biblioteca:'Biblioteca Virtual',projetos:'Projetos / IC',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',transparencia:'Transparência',usuarios:'Usuários e permissões',auditoria:'Registro de alterações',backup:'Backup / Exportação',config:'Configurações'};
+  const titles={dashboard:'Visão geral',pdv:'Balcão / PDV',caixa:'Caixa',entrada:'Entrada de estoque',inventario:'Inventário físico',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',mltn:'MLTN / POD',avisos:'Avisos do Portal',biblioteca:'Biblioteca Virtual',projetos:'Projetos / IC',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',transparencia:'Transparência',usuarios:'Usuários e permissões',auditoria:'Registro de alterações',backup:'Backup / Exportação',config:'Configurações'};
   function switchView(v){
     $$('.view').forEach(x=>x.classList.add('hidden'));$(`#view-${v}`).classList.remove('hidden');
     $$('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('#pageTitle').textContent=titles[v]||v;
-    if(v==='dashboard')loadDashboard();if(v==='vendas')loadSales();if(v==='fiado')loadFiado();if(v==='encomendas')loadOrders();if(v==='entrada')loadStockEntryHistory();if(v==='eventosportal')loadEventsAdmin();if(v==='biblioteca')loadLibraryAdmin();if(v==='projetos')loadProjectsAdmin();if(v==='relatorios')loadReports();if(v==='caixa')loadCash().then(loadCashSummary);window.CAHKV6?.load?.(v);
+    if(v==='dashboard')loadDashboard();if(v==='vendas')loadSales();if(v==='fiado')loadFiado();if(v==='encomendas')loadOrders();if(v==='entrada')loadStockEntryHistory();if(v==='biblioteca')loadLibraryAdmin();if(v==='projetos')loadProjectsAdmin();if(v==='relatorios')loadReports();if(v==='caixa')loadCash().then(loadCashSummary);window.CAHKV6?.load?.(v);
   }
   $$('#nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 
@@ -117,15 +117,15 @@
       const start=new Date();start.setHours(0,0,0,0);const end=new Date(start);end.setDate(end.getDate()+1);
       const [salesR,ordersR,eventsR,libR,projR]=await Promise.all([
         sb.from('vw_vendas_resumo').select('*').gte('created_at',start.toISOString()).lt('created_at',end.toISOString()).eq('status','concluida').order('created_at',{ascending:false}),
-        adminApi('list').catch(()=>({orders:[]})),portalAdminApi('list_events').catch(()=>({events:[]})),portalAdminApi('list_library').catch(()=>({items:[]})),portalAdminApi('list_projects').catch(()=>({projects:[]}))
+        adminApi('list').catch(()=>({orders:[]})),portalAdminApi('list_notices').catch(()=>({notices:[]})),portalAdminApi('list_library').catch(()=>({items:[]})),portalAdminApi('list_projects').catch(()=>({projects:[]}))
       ]);
       if(salesR.error)throw salesR.error;const sales=salesR.data||[],fat=sales.reduce((a,b)=>a+Number(b.total||0),0),low=products.filter(p=>p.ativo&&Number(p.estoque)<=Number(p.estoque_minimo||0)),openOrders=(ordersR.orders||[]).filter(o=>!['entregue','cancelada'].includes(o.status)),stockValue=products.filter(p=>p.ativo).reduce((a,p)=>a+Number(p.estoque||0)*Number(p.preco_compra||0),0);
       metrics.innerHTML=[['Caixa',openCash?'Aberto':'Fechado'],['Vendas hoje',sales.length],['Faturamento hoje',brl(fat)],['Estoque baixo',low.length],['Encomendas abertas',openOrders.length],['Valor em estoque',brl(stockValue)]].map(([a,b])=>`<div class="metric"><span>${a}</span><strong>${b}</strong></div>`).join('');
       $('#dashboardLowStock').innerHTML=low.length?low.slice(0,10).map(p=>`<div class="compact-item"><div><strong>${esc(p.nome)}</strong><div class="muted small">${Number(p.estoque).toLocaleString('pt-BR')} em estoque • mínimo ${Number(p.estoque_minimo||0).toLocaleString('pt-BR')}</div></div><button class="ghost" data-dash-entry="${p.id}">Entrada</button></div>`).join(''):'<div class="empty">Estoque em níveis normais.</div>';
       $$('[data-dash-entry]').forEach(b=>b.onclick=()=>{switchView('entrada');$('#stockEntryProduct').value=b.dataset.dashEntry;syncStockEntryCurrent()});
       $('#dashboardRecentSales').innerHTML=sales.length?sales.slice(0,8).map(v=>`<div class="compact-item"><div><strong>Venda #${v.id}</strong><div class="muted small">${esc(v.vendedor_nome||'')} • ${dt(v.created_at)}</div></div><strong>${brl(v.total)}</strong></div>`).join(''):'<div class="empty">Nenhuma venda hoje.</div>';
-      const upcoming=(eventsR.events||[]).filter(e=>e.active&&String(e.event_date)>=dateInput()).length,books=(libR.items||[]).filter(x=>x.active).length,projects=(projR.projects||[]).filter(x=>x.active).length;
-      $('#dashboardPortal').innerHTML=`<div class="compact-item"><span>Próximos eventos</span><strong>${upcoming}</strong></div><div class="compact-item"><span>Materiais na biblioteca</span><strong>${books}</strong></div><div class="compact-item"><span>Projetos / IC publicados</span><strong>${projects}</strong></div><div class="compact-item"><span>Encomendas aguardando ação</span><strong>${openOrders.length}</strong></div>`;
+      const upcoming=(eventsR.notices||[]).filter(e=>e.active&&e.show_in_agenda&&String(e.event_date||'')>=dateInput()).length,books=(libR.items||[]).filter(x=>x.active).length,projects=(projR.projects||[]).filter(x=>x.active).length;
+      $('#dashboardPortal').innerHTML=`<div class="compact-item"><span>Itens na Agenda</span><strong>${upcoming}</strong></div><div class="compact-item"><span>Materiais na biblioteca</span><strong>${books}</strong></div><div class="compact-item"><span>Projetos / IC publicados</span><strong>${projects}</strong></div><div class="compact-item"><span>Encomendas aguardando ação</span><strong>${openOrders.length}</strong></div>`;
     }catch(e){metrics.innerHTML=`<div class="empty">${esc(errMsg(e))}</div>`}
   }
   $('#dashboardGoStock')?.addEventListener('click',()=>switchView('produtos'));$('#dashboardGoSales')?.addEventListener('click',()=>switchView('vendas'));$$('[data-dash-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.dashView));
@@ -315,39 +315,6 @@ Deseja inativá-lo e removê-lo da loja/balcão?`)){
       }else toast(msg,'error');
     }
   }
-
-  // EVENTOS DO PORTAL
-  $('#refreshEventsAdmin').onclick=loadEventsAdmin;
-  $('#clearEvent').onclick=clearEventForm;
-  function clearEventForm(){
-    $('#eventForm').reset();$('#eventId').value='';$('#eventImageUrl').value='';$('#eventOrder').value='0';$('#eventActive').checked=true;$('#eventFeatured').checked=false;setMediaPreview('#eventImagePreview','');
-  }
-  async function loadEventsAdmin(){
-    try{const data=await portalAdminApi('list_events');eventsCache=data.events||[];renderEventsAdmin()}catch(e){toast(errMsg(e),'error')}
-  }
-  function renderEventsAdmin(){
-    const box=$('#adminEventsList');if(!box)return;
-    box.innerHTML=eventsCache.length?eventsCache.map(ev=>`<div class="compact-item event-admin-item"><div class="event-admin-main">${ev.image_url?`<img src="${esc(ev.image_url)}" alt="">`:''}<div><strong>${esc(ev.title)}</strong><div class="muted small">${new Date(`${ev.event_date}T12:00:00`).toLocaleDateString('pt-BR')}${ev.start_time?` • ${String(ev.start_time).slice(0,5)}`:''}${ev.place?` • ${esc(ev.place)}`:''} • ${ev.active?'publicado':'pausado'}</div></div></div><div class="actions"><button class="ghost" data-edit-event="${ev.id}">Editar</button><button class="danger" data-delete-event="${ev.id}">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhum evento cadastrado.</div>';
-    $$('[data-edit-event]').forEach(b=>b.onclick=()=>fillEventForm(b.dataset.editEvent));
-    $$('[data-delete-event]').forEach(b=>b.onclick=()=>deleteEvent(b.dataset.deleteEvent));
-  }
-  function fillEventForm(id){
-    const ev=eventsCache.find(x=>x.id===id);if(!ev)return;
-    $('#eventId').value=ev.id;$('#eventTitle').value=ev.title||'';$('#eventDate').value=ev.event_date||'';$('#eventTime').value=ev.start_time?String(ev.start_time).slice(0,5):'';$('#eventPlace').value=ev.place||'';$('#eventDescription').value=ev.description||'';$('#eventUrl').value=ev.event_url||'';$('#eventImageUrl').value=ev.image_url||'';$('#eventOrder').value=Number(ev.display_order||0);$('#eventActive').checked=!!ev.active;$('#eventFeatured').checked=!!ev.featured;$('#eventImageFile').value='';setMediaPreview('#eventImagePreview',ev.image_url||'');window.scrollTo({top:0,behavior:'smooth'});
-  }
-  async function deleteEvent(id){
-    const ev=eventsCache.find(x=>x.id===id);if(!ev||!confirm(`Excluir o evento "${ev.title}"?`))return;
-    try{await portalAdminApi('delete_event',{id});toast('Evento excluído');clearEventForm();await loadEventsAdmin()}catch(e){toast(errMsg(e),'error')}
-  }
-  $('#eventForm').onsubmit=async e=>{
-    e.preventDefault();
-    try{
-      let imageUrl=$('#eventImageUrl').value||null;const file=$('#eventImageFile').files?.[0];
-      if(file){toast('Enviando imagem do evento…');imageUrl=await uploadPublicImage(file,'events')}
-      const event={id:$('#eventId').value||undefined,title:$('#eventTitle').value.trim(),event_date:$('#eventDate').value,start_time:$('#eventTime').value||null,place:$('#eventPlace').value.trim()||null,description:$('#eventDescription').value.trim()||null,event_url:$('#eventUrl').value.trim()||null,image_url:imageUrl,display_order:Number($('#eventOrder').value)||0,active:$('#eventActive').checked,featured:$('#eventFeatured').checked};
-      const data=await portalAdminApi('save_event',{event});toast('Evento salvo no Portal CAHK');await loadEventsAdmin();fillEventForm(data.event.id);
-    }catch(e){toast(errMsg(e),'error')}
-  };
 
   // BIBLIOTECA VIRTUAL
   $('#refreshLibrary')?.addEventListener('click',loadLibraryAdmin);$('#clearLibrary')?.addEventListener('click',clearLibraryForm);

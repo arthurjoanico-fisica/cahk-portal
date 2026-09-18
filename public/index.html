@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>CAHK — Centro Acadêmico Hugo Kremer</title>
-  <meta name="description" content="Rádio, loja, eventos, contatos e acessos do Centro Acadêmico Hugo Kremer — Física UFPR.">
-  <meta name="cahk-build" content="6.0-sistema-completo">
+  <meta name="description" content="Rádio, loja, avisos, agenda, biblioteca, projetos e acessos do Centro Acadêmico Hugo Kremer — Física UFPR.">
+  <meta name="cahk-build" content="6.0.2-avisos-unificados">
   <script>try{const t=localStorage.getItem('cahk-theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}</script>
-  <link rel="stylesheet" href="/portal-v5.css?v=6.0">
+  <link rel="stylesheet" href="/portal-v5.css?v=6.0.2">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
   <meta name="theme-color" content="#5b2bbf">
-<meta property="og:title" content="CAHK — Centro Acadêmico Hugo Kremer"><meta property="og:description" content="Rádio, loja, eventos, contatos e acessos do Centro Acadêmico Hugo Kremer — Física UFPR."><meta property="og:type" content="website"><meta property="og:url" content="https://cahk.app/"><meta property="og:image" content="https://cahk.app/assets/cahk-mascote.png"><meta name="twitter:card" content="summary_large_image"></head>
+<meta property="og:title" content="CAHK — Centro Acadêmico Hugo Kremer"><meta property="og:description" content="Rádio, loja, avisos, agenda, biblioteca, projetos e acessos do Centro Acadêmico Hugo Kremer — Física UFPR."><meta property="og:type" content="website"><meta property="og:url" content="https://cahk.app/"><meta property="og:image" content="https://cahk.app/assets/cahk-mascote.png"><meta name="twitter:card" content="summary_large_image"></head>
 <body>
   <header class="site-header">
     <div class="nav-shell">
@@ -36,10 +36,16 @@
         <a href="/projetos/">Projetos</a>
         <a href="/vida-campus/">Vida no Campus</a>
         <a href="/agenda/">Agenda</a>
-        <a href="#eventos">Eventos</a>
-        <a href="/transparencia/">Transparência</a>
-        <a href="/historia/">História</a>
-        <a href="/equipe/">Gestão atual</a>
+        <details class="nav-more">
+          <summary>Mais <span aria-hidden="true">▾</span></summary>
+          <div class="nav-more-menu">
+            <a href="/#avisos">Avisos</a>
+            <a href="/transparencia/">Transparência</a>
+            <a href="/historia/">História do CAHK</a>
+            <a href="/equipe/">Gestão atual</a>
+            <a href="/#contatos">Contatos</a>
+          </div>
+        </details>
       </nav>
 
       <div class="header-actions">
@@ -62,7 +68,7 @@
         <div class="eyebrow"><span></span> Estudantes <b>•</b> Ciência <b>•</b> Comunidade</div>
         <h1>CAHK</h1>
         <h2>Um único lugar para conectar estudantes, ciência e comunidade.</h2>
-        <p>O portal do Centro Acadêmico Hugo Kremer reúne Rádio CAHK, Loja, Biblioteca Virtual, projetos de pesquisa, eventos e acessos rápidos para facilitar a vida acadêmica e fortalecer nossa comunidade.</p>
+        <p>O portal do Centro Acadêmico Hugo Kremer reúne Rádio CAHK, Loja, Biblioteca Virtual, projetos de pesquisa, avisos, agenda e acessos rápidos para facilitar a vida acadêmica e fortalecer nossa comunidade.</p>
         <div class="hero-actions">
           <a class="button button-primary" href="#servicos">Explorar portal <span>→</span></a>
           <a class="button button-secondary" href="/historia/">Conhecer a história</a>
@@ -120,13 +126,6 @@
           <div><h3>Vida no Campus</h3><p>Cardápio do RU Politécnico e horários do Intercampi.</p><strong>Consultar agora <span>→</span></strong></div>
         </a>
 
-        <a class="service-card" href="#eventos">
-          <div class="service-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M6 3v3M18 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="M8 12h3v3H8zM14 12h3v3h-3z"/></svg>
-          </div>
-          <div><h3>Eventos</h3><p>Fique por dentro de palestras, assembleias e atividades do CAHK.</p><strong>Ver eventos <span>→</span></strong></div>
-        </a>
-
         <a class="service-card" href="/agenda/">
           <div class="service-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3v3M18 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="M8 12h8M8 16h5"/></svg></div>
           <div><h3>Agenda</h3><p>Calendário de eventos, assembleias, aulões e atividades.</p><strong>Abrir agenda <span>→</span></strong></div>
@@ -146,15 +145,7 @@
       </div>
     </section>
 
-    <section class="events-contact section-shell" id="eventos" aria-labelledby="eventos-title">
-      <div class="events-column">
-        <div class="section-heading-row">
-          <div class="section-kicker"><span></span><h2 id="eventos-title">Próximos eventos</h2></div>
-          <a class="text-link" href="/agenda/">Abrir agenda completa →</a>
-        </div>
-        <div id="events-list" class="events-list" aria-live="polite"></div>
-      </div>
-
+    <section class="events-contact section-shell" id="contatos-section">
       <div class="contact-column" id="contatos">
         <div class="section-kicker"><span></span><h2>Acessos rápidos</h2></div>
         <div class="contact-grid">
@@ -231,6 +222,6 @@
     </div>
   </footer>
 
-  <script src="/portal-v5.js?v=6.0"></script>
-<script src="/pwa.js?v=6.0"></script></body>
+  <script src="/portal-v5.js?v=6.0.2"></script>
+<script src="/pwa.js?v=6.0.2"></script></body>
 </html>

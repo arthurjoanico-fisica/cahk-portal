@@ -48,7 +48,6 @@
         <button data-view="fiado" data-perm="fiado">Fiado</button>
         <button data-view="encomendas" data-perm="orders">Encomendas</button>
         <button data-view="mltn" data-perm="mltn">MLTN / POD</button>
-        <button data-view="eventosportal" data-perm="events">Eventos do Portal</button>
         <button data-view="avisos" data-perm="notices">Avisos do Portal</button>
         <button data-view="biblioteca" data-perm="library">Biblioteca Virtual</button>
         <button data-view="projetos" data-perm="projects">Projetos / IC</button>
@@ -233,37 +232,40 @@
         </div>
       </section>
 
-
-      <section id="view-eventosportal" class="view hidden">
+      <section id="view-avisos" class="view hidden">
         <div class="grid-2">
           <div class="card">
-            <div class="section-head"><div><h2>Evento do Portal</h2><p class="muted small">Cadastre o que os alunos verão na página inicial.</p></div></div>
-            <form id="eventForm" class="form-grid">
-              <input id="eventId" type="hidden">
-              <input id="eventImageUrl" type="hidden">
-              <label class="span-2">Nome do evento<input id="eventTitle" maxlength="160" required placeholder="Ex.: CineCAHK — Interestelar"></label>
-              <label>Data<input id="eventDate" type="date" required></label>
-              <label>Horário<input id="eventTime" type="time"></label>
-              <label class="span-2">Local<input id="eventPlace" maxlength="220" placeholder="Ex.: Auditório da Física"></label>
-              <label class="span-2">Descrição<textarea id="eventDescription" rows="4" maxlength="3000" placeholder="Texto curto que aparecerá no Portal CAHK."></textarea></label>
-              <label class="span-2">Link do evento<input id="eventUrl" type="url" placeholder="https://www.instagram.com/... ou link de inscrição"></label>
-              <label class="span-2">Imagem do evento<input id="eventImageFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">JPG, PNG ou WebP, até 5 MB. A imagem será hospedada pelo próprio CAHK.</span></label>
-              <div id="eventImagePreview" class="media-preview span-2 hidden"></div>
-              <label>Ordem<input id="eventOrder" type="number" step="1" value="0"></label>
-              <label class="check-line"><input id="eventActive" type="checkbox" checked>Publicado</label>
-              <label class="check-line span-2"><input id="eventFeatured" type="checkbox">Evento em destaque</label>
-              <div class="row span-2"><button class="primary" type="submit">Salvar evento</button><button id="clearEvent" class="ghost" type="button">Novo / limpar</button></div>
+            <div class="section-head"><div><h2>Avisos do Portal</h2><p class="muted small">Um único cadastro para avisos e itens da Agenda. Se o aviso tiver data, marque “Adicionar à Agenda”.</p></div></div>
+            <form id="noticeForm" class="form-grid">
+              <input id="noticeId" type="hidden">
+              <input id="noticeImageUrl" type="hidden">
+              <label class="span-2">Título<input id="noticeTitle" required maxlength="180" placeholder="Ex.: CineCAHK — Devoradores de Estrelas"></label>
+              <label>Nível<select id="noticeLevel"><option value="info">Informativo</option><option value="important">Importante</option><option value="urgent">Urgente</option></select></label>
+              <label>Ordem<input id="noticeOrder" type="number" value="0"></label>
+              <label class="span-2">Texto<textarea id="noticeBody" rows="4" maxlength="3000" placeholder="Descrição, comunicado ou detalhes da atividade."></textarea></label>
+              <label>Exibir a partir de<input id="noticeStart" type="datetime-local"></label>
+              <label>Ocultar após<input id="noticeEnd" type="datetime-local"></label>
+              <label>Texto do botão<input id="noticeLinkLabel" placeholder="Saiba mais"></label>
+              <label>Link<input id="noticeLink" type="url" placeholder="https://..."></label>
+              <label class="check-line span-2"><input id="noticeAgenda" type="checkbox">Adicionar também à Agenda</label>
+              <div id="noticeAgendaFields" class="form-grid span-2 hidden notice-agenda-fields">
+                <label>Data da atividade<input id="noticeEventDate" type="date"></label>
+                <label>Horário<input id="noticeEventTime" type="time"></label>
+                <label class="span-2">Local<input id="noticePlace" maxlength="220" placeholder="Ex.: Auditório da Física"></label>
+                <label class="span-2">Imagem para a Agenda<input id="noticeImageFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">JPG, PNG ou WebP, até 5 MB.</span></label>
+                <div id="noticeImagePreview" class="media-preview span-2 hidden"></div>
+                <label class="check-line span-2"><input id="noticeFeatured" type="checkbox">Destacar na Agenda</label>
+              </div>
+              <label class="check-line"><input id="noticeActive" type="checkbox" checked>Publicado</label>
+              <label class="check-line"><input id="noticePinned" type="checkbox">Fixar primeiro</label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar aviso</button><button id="noticeClear" class="ghost" type="button">Novo / limpar</button></div>
             </form>
           </div>
           <div class="card">
-            <div class="section-head"><div><h2>Eventos cadastrados</h2><p class="muted small">Edite, pause ou exclua eventos do portal.</p></div><button id="refreshEventsAdmin" class="ghost" type="button">Atualizar</button></div>
-            <div id="adminEventsList" class="compact-list"></div>
+            <div class="section-head"><div><h2>Avisos cadastrados</h2><p class="muted small">Os marcados com Agenda também aparecem em cahk.app/agenda.</p></div><button id="noticeRefresh" class="ghost" type="button">Atualizar</button></div>
+            <div id="noticeAdminList" class="compact-list"></div>
           </div>
         </div>
-      </section>
-
-      <section id="view-avisos" class="view hidden">
-        <div class="grid-2"><div class="card"><h2>Aviso do Portal</h2><form id="noticeForm" class="form-grid"><input id="noticeId" type="hidden"><label class="span-2">Título<input id="noticeTitle" required maxlength="180"></label><label>Nível<select id="noticeLevel"><option value="info">Informativo</option><option value="important">Importante</option><option value="urgent">Urgente</option></select></label><label>Ordem<input id="noticeOrder" type="number" value="0"></label><label class="span-2">Texto<textarea id="noticeBody" rows="4" maxlength="3000"></textarea></label><label>Início<input id="noticeStart" type="datetime-local"></label><label>Fim<input id="noticeEnd" type="datetime-local"></label><label>Texto do botão<input id="noticeLinkLabel" placeholder="Saiba mais"></label><label>Link<input id="noticeLink" type="url" placeholder="https://..."></label><label class="check-line"><input id="noticeActive" type="checkbox" checked>Publicado</label><label class="check-line"><input id="noticePinned" type="checkbox">Fixar primeiro</label><div class="row span-2"><button class="primary" type="submit">Salvar aviso</button><button id="noticeClear" class="ghost" type="button">Novo / limpar</button></div></form></div><div class="card"><div class="section-head"><h2>Avisos cadastrados</h2><button id="noticeRefresh" class="ghost" type="button">Atualizar</button></div><div id="noticeAdminList" class="compact-list"></div></div></div>
       </section>
 
       <section id="view-biblioteca" class="view hidden">
@@ -442,7 +444,7 @@
     </main>
   </div>
 
-  <script src="app.js?v=6.0"></script><script src="v6.js?v=6.0"></script>
+  <script src="app.js?v=6.0.2"></script><script src="v6.js?v=6.0.2"></script>
 
   <div id="mltnOrderModal" class="mltn-modal hidden" role="dialog" aria-modal="true" aria-labelledby="mltnModalTitle">
     <div class="mltn-modal-card">

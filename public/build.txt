@@ -1,1 +1,1 @@
-CAHK Portal build 6.0-sistema-completo
+CAHK Portal build 6.0.2-avisos-unificados

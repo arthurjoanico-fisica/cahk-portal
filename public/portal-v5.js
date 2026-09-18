@@ -52,7 +52,7 @@
     btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>';
     headerActions.insertBefore(btn,headerActions.firstChild);
     const overlay=document.createElement('div');overlay.className='global-search-backdrop';overlay.id='globalSearchBackdrop';
-    overlay.innerHTML='<div class="global-search-panel" role="dialog" aria-modal="true" aria-label="Busca no Portal CAHK"><div class="global-search-head"><input id="globalSearchInput" type="search" placeholder="Pesquisar livros, projetos, eventos e páginas…" autocomplete="off"><button class="global-search-close" id="globalSearchClose" type="button" aria-label="Fechar">×</button></div><div class="global-search-results" id="globalSearchResults"><div class="search-empty">Digite pelo menos 2 letras para pesquisar.</div></div></div>';
+    overlay.innerHTML='<div class="global-search-panel" role="dialog" aria-modal="true" aria-label="Busca no Portal CAHK"><div class="global-search-head"><input id="globalSearchInput" type="search" placeholder="Pesquisar livros, projetos, avisos e páginas…" autocomplete="off"><button class="global-search-close" id="globalSearchClose" type="button" aria-label="Fechar">×</button></div><div class="global-search-results" id="globalSearchResults"><div class="search-empty">Digite pelo menos 2 letras para pesquisar.</div></div></div>';
     document.body.appendChild(overlay);
     const input=overlay.querySelector('#globalSearchInput'),results=overlay.querySelector('#globalSearchResults');let timer=0,seq=0;
     const close=()=>{overlay.classList.remove('open');document.body.style.overflow=''};
