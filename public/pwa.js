@@ -1,6 +1,6 @@
 (()=>{
-  const VERSION='6.0.5';
-  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js?v='+VERSION).catch(()=>{}));}
+  const VERSION='6.0.7';
+  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js?v='+VERSION).then(r=>r.update().catch(()=>{})).catch(()=>{}));}
 
   if(!document.querySelector('link[rel="manifest"]')){
     const m=document.createElement('link');m.rel='manifest';m.href='/site.webmanifest';document.head.appendChild(m);
@@ -12,7 +12,7 @@
     const m=document.createElement('meta');m.name='apple-mobile-web-app-capable';m.content='yes';document.head.appendChild(m);
   }
   if(!document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')){
-    const m=document.createElement('meta');m.name='apple-mobile-web-app-status-bar-style';m.content='default';document.head.appendChild(m);
+    const m=document.createElement('meta');m.name='apple-mobile-web-app-status-bar-style';m.content='black';document.head.appendChild(m);
   }
 
   let deferredPrompt=null;

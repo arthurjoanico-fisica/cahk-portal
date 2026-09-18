@@ -1,1 +1,1 @@
-CAHK Portal build 6.0.6-ios-apk
+CAHK Portal build 6.0.7-safe-restore
