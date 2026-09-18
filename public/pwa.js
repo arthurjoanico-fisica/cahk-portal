@@ -1,5 +1,5 @@
 (()=>{
-  const VERSION='6.0.7';
+  const VERSION='6.0.8';
   if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js?v='+VERSION).then(r=>r.update().catch(()=>{})).catch(()=>{}));}
 
   if(!document.querySelector('link[rel="manifest"]')){
