@@ -37,6 +37,20 @@
     {
       "name": "Loja CAHK",
       "url": "/loja/"
+    },
+    {
+      "name": "Instalar CAHK",
+      "url": "/instalar/"
     }
+  ],
+  "id": "/",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "orientation": "any",
+  "prefer_related_applications": false,
+  "categories": [
+    "education",
+    "utilities",
+    "productivity"
   ]
 }
