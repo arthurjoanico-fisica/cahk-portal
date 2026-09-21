@@ -1,1 +1,1 @@
-CAHK Portal build 6.0.8-css-restore
+CAHK Portal build 6.0.10-ru-today-tomorrow
