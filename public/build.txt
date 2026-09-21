@@ -1,1 +1,1 @@
-CAHK Portal build 6.0.11-painel-qrcode-dark-all
+CAHK Portal build 6.0.12-radio-weak-network
