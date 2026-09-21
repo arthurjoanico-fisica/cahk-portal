@@ -1,1 +1,1 @@
-CAHK Portal build 6.0.10-ru-today-tomorrow
+CAHK Portal build 6.0.11-painel-qrcode-dark-all
