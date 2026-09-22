@@ -1,1 +1,1 @@
-CAHK Portal build 6.0.14-painel-16x9-fit
+CAHK Portal build 6.0.15-weather-centro-politecnico

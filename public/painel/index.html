@@ -1,13 +1,26 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Painel da sala — CAHK</title><meta name="description" content="Painel do CAHK para TV: Rádio, RU, Intercampi, avisos e agenda.">
 <script>try{const t=localStorage.getItem('cahk-theme');if(t==='light'){}else document.documentElement.dataset.theme='dark'}catch(e){document.documentElement.dataset.theme='dark'}</script>
-<link rel="stylesheet" href="/painel/styles.css?v=6.0.14"><link rel="icon" href="/favicon.ico"><meta name="theme-color" content="#111015"></head>
+<link rel="stylesheet" href="/painel/styles.css?v=6.0.15"><link rel="icon" href="/favicon.ico"><meta name="theme-color" content="#111015"></head>
 <body><main class="tv-shell">
 <header class="tv-top"><a class="tv-brand" href="/"><img src="/assets/cahk-logo-v32.png" alt="CAHK"></a><div class="tv-top-copy"><strong>Painel da sala</strong><span id="updated">Atualizando informações…</span></div><div class="tv-clock"><strong id="clock">--:--</strong><span id="date"></span></div><div class="tv-actions"><button id="theme" class="tv-action" title="Alternar tema"><svg viewBox="0 0 24 24"><path d="M20.5 15.3A8.8 8.8 0 0 1 8.7 3.5 8.9 8.9 0 1 0 20.5 15.3Z"/></svg></button><button id="fullscreen" class="tv-action" title="Tela cheia"><svg viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg></button></div></header>
 <section class="tv-grid">
 <div class="tv-main">
 <article class="tv-card"><div class="tv-section-head"><h2>Rádio CAHK</h2><span class="tv-live"><span class="tv-dot"></span> NO AR</span></div><div class="now-grid"><div class="now-cover"><img id="nowImg" hidden alt=""><div id="nowPlaceholder" class="now-placeholder">CAHK</div></div><div class="now-info"><h1 id="nowTitle">Carregando rádio…</h1><p id="nowChannel"></p><span id="nowRequest" class="now-request">Rádio CAHK</span></div></div></article>
-<article class="tv-card"><div class="tv-section-head"><h2>Próximos pedidos</h2><span class="tv-live">cahk.app/radio</span></div><div id="queue" class="tv-queue"></div></article>
+<div class="tv-main-bottom">
+<article class="tv-card tv-queue-card"><div class="tv-section-head"><h2>Próximos pedidos</h2><span class="tv-live">Rádio</span></div><div id="queue" class="tv-queue"></div></article>
+<article class="tv-card weather-card">
+  <div class="tv-section-head"><h2>Tempo — Centro Politécnico</h2><span id="weatherSource" class="tv-live">Atualizando…</span></div>
+  <div class="weather-layout">
+    <div class="weather-now">
+      <div id="weatherIcon" class="weather-icon">🌤️</div>
+      <div><strong id="weatherTemp">--°</strong><span id="weatherLabel">Carregando</span></div>
+      <div id="weatherMeta" class="weather-meta">Máx --° · Mín --°</div>
+    </div>
+    <div id="weatherHours" class="weather-hours"><div class="tv-empty">Carregando previsão do dia…</div></div>
+  </div>
+</article>
+</div>
 </div>
 <aside class="tv-side">
 <article class="tv-card"><div class="tv-section-head"><h2>RU Politécnico</h2><span id="ruDate" class="tv-live">Hoje</span></div><div id="meals" class="meal-list"></div></article>
@@ -16,4 +29,4 @@
 </aside>
 </section>
 <footer class="tv-footer"><div id="agenda" class="agenda-row"></div><div class="tv-qr"><img src="/assets/qrs/radio.png" alt="QR Code da Rádio CAHK"><div><strong>Peça uma música</strong><span>Aponte a câmera para o QR</span></div></div></footer>
-</main><script src="/painel/app.js?v=6.0.14"></script></body></html>
+</main><script src="/painel/app.js?v=6.0.15"></script></body></html>
