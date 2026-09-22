@@ -1,1 +1,1 @@
-CAHK Portal build 6.0.13-painel-one-screen
+CAHK Portal build 6.0.14-painel-16x9-fit
