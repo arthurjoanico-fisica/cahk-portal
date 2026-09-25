@@ -41,7 +41,7 @@
         <button class="primary span2">Salvar configuração</button>
       </form>
       <hr class="soft-rule">
-      <button id="refresh" class="ghost full">Atualizar Top Música do YouTube</button>
+      <button id="refresh" class="ghost full">Atualizar seleção de clássicos</button><p class="muted small">Programação automática: rap clássico, rock clássico e MPB clássica. Sem Top do YouTube e com filtro contra músicas de IA, covers e resultados obscuros.</p>
       <div id="refreshMsg" class="status muted small"></div><div id="trackMetric"></div>
     </section>
 
@@ -242,7 +242,7 @@ $('#cfg').onsubmit=async e=>{e.preventDefault();try{await api({action:'save_conf
 
 $('#annForm').onsubmit=async e=>{e.preventDefault();const id=$('#annId').value,a={title:$('#annTitle').value,text:$('#annText').value,type:$('#annType').value,priority:Number($('#annPriority').value)||0,audio_url:$('#audioUrl').value.trim()||null,active:$('#annActive').checked};try{await api(id?{action:'update_announcement',id,announcement:a}:{action:'create_announcement',announcement:a});clearAnnouncement();await load()}catch(e){alert(e.message)}};
 async function deleteAnnouncement(id){if(!confirm('Excluir esta locução?'))return;try{await api({action:'delete_announcement',id});await load()}catch(e){alert(e.message)}}
-$('#refresh').onclick=async()=>{$('#refreshMsg').textContent='Consultando YouTube…';try{const j=await api({action:'refresh_top'});$('#refreshMsg').textContent=`Atualizado: ${j.count} faixas elegíveis.`;await load()}catch(e){$('#refreshMsg').textContent=e.message}};
+$('#refresh').onclick=async()=>{$('#refreshMsg').textContent='Buscando clássicos selecionados…';try{const j=await api({action:'refresh_top'});const g=j.genres||{};$('#refreshMsg').textContent=`Atualizado: ${j.count} faixas • Rap ${g.rap||0} • Rock ${g.rock||0} • MPB ${g.mpb||0}`;await load()}catch(e){$('#refreshMsg').textContent=e.message}};
 
 
 $('#scheduledForm').onsubmit=async e=>{
