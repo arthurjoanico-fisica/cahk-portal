@@ -406,8 +406,32 @@
 
       <section id="view-relatorios" class="view hidden">
         <div class="card">
-          <div class="section-head wrap"><h2>Resumo por período</h2><div class="row"><input id="reportStart" type="date"><input id="reportEnd" type="date"><button id="refreshReports" class="ghost">Atualizar</button><button id="exportReports" class="ghost" type="button">Exportar CSV</button></div></div>
+          <div class="section-head wrap"><h2>Resumo por período</h2><div class="row"><input id="reportStart" type="date"><input id="reportEnd" type="date"><button id="refreshReports" class="ghost">Atualizar</button><button id="exportReports" class="primary" type="button">Publicar na Transparência</button></div></div>
           <div id="reportMetrics" class="metric-grid"></div>
+        </div>
+
+        <div id="monthlyTransparencyBox" class="card hidden">
+          <div class="section-head wrap">
+            <div>
+              <h2>Prestação de contas mensal</h2>
+              <p class="muted small">O sistema calcula as entradas, saídas, caixa final e valor dos produtos. Você informa apenas quanto havia no caixa no começo do mês.</p>
+            </div>
+            <button id="monthlyTransparencyClose" class="ghost" type="button">Fechar</button>
+          </div>
+          <div class="form-grid">
+            <label>Mês da prestação
+              <input id="monthlyTransparencyMonth" type="month">
+            </label>
+            <label>Caixa no começo do mês
+              <input id="monthlyOpeningCash" type="number" min="0" step="0.01" placeholder="0,00">
+            </label>
+            <div class="row span-2">
+              <button id="monthlyTransparencyPreview" class="ghost" type="button">Calcular prévia</button>
+              <button id="monthlyTransparencyPublish" class="primary" type="button">Publicar / atualizar mês</button>
+            </div>
+          </div>
+          <div id="monthlyTransparencyPreviewBox" class="monthly-transparency-preview"></div>
+          <p class="muted small">Entradas automáticas: vendas recebidas + recebimentos de fiado. Saídas automáticas: compras de estoque registradas com custo. O estoque final é valorizado pelo custo de compra cadastrado.</p>
         </div>
         <div class="grid-2"><div class="card"><h2>Por pagamento</h2><div id="reportPayments"></div></div><div class="card"><h2>Por vendedor</h2><div id="reportSellers"></div></div></div>
         <div class="card"><h2>Produtos mais vendidos</h2><div id="reportProducts"></div></div><div class="grid-2"><div class="card"><h2>Faturamento por dia</h2><div id="reportDaily" class="bar-chart"></div></div><div class="card"><h2>Margem no período</h2><div id="reportMargin" class="bar-chart"></div></div></div>
@@ -424,7 +448,7 @@
 
       <section id="view-auditoria" class="view hidden"><div class="card"><div class="section-head wrap"><div><h2>Registro de alterações</h2><p class="muted small">Quem alterou o quê e quando.</p></div><div class="row"><select id="auditEntity"><option value="">Todas as áreas</option></select><button id="auditRefresh" class="ghost" type="button">Atualizar</button></div></div><div id="auditList" class="audit-list"></div></div></section>
 
-      <section id="view-backup" class="view hidden"><div class="grid-2"><div class="card"><h2>Backup completo</h2><p class="muted">Gera um arquivo JSON com produtos, vendas, estoque, encomendas, portal, biblioteca, projetos, inventários e registros administrativos.</p><button id="backupDownload" class="primary" type="button">Baixar backup JSON</button></div><div class="card"><h2>Exportações rápidas</h2><p class="muted">Use os relatórios em CSV para planilhas e o backup completo para arquivamento da gestão.</p><button id="backupReportShortcut" class="ghost" type="button">Ir para Relatórios</button></div></div></section>
+      <section id="view-backup" class="view hidden"><div class="grid-2"><div class="card"><h2>Backup completo</h2><p class="muted">Gera um arquivo JSON com produtos, vendas, estoque, encomendas, portal, biblioteca, projetos, inventários e registros administrativos.</p><button id="backupDownload" class="primary" type="button">Baixar backup JSON</button></div><div class="card"><h2>Exportações rápidas</h2><p class="muted">Use os relatórios para publicar a prestação de contas mensal na Transparência e o backup completo para arquivamento da gestão.</p><button id="backupReportShortcut" class="ghost" type="button">Ir para Relatórios</button></div></div></section>
 
       <section id="view-config" class="view hidden">
         <div class="card narrow">
@@ -444,7 +468,7 @@
     </main>
   </div>
 
-  <script src="app.js?v=6.0.2"></script><script src="v6.js?v=6.0.2"></script>
+  <script src="app.js?v=6.0.16"></script><script src="v6.js?v=6.0.16"></script>
 
   <div id="mltnOrderModal" class="mltn-modal hidden" role="dialog" aria-modal="true" aria-labelledby="mltnModalTitle">
     <div class="mltn-modal-card">

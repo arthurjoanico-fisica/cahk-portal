@@ -449,7 +449,72 @@ Deseja inativá-lo e removê-lo da loja/balcão?`)){
     $('#reportPayments').innerHTML=render(group(x,'tipo_pagamento'));$('#reportSellers').innerHTML=render(group(x,'vendedor_nome'));
     const ids=x.map(v=>v.id);let items=[];if(ids.length){const r=await sb.from('venda_itens').select('produto_nome,quantidade,total').in('venda_id',ids);if(!r.error)items=r.data||[]}const pg=Object.entries(items.reduce((o,v)=>{const k=v.produto_nome||'—';o[k]??={qty:0,total:0};o[k].qty+=Number(v.quantidade||0);o[k].total+=Number(v.total||0);return o},{})).sort((a,b)=>b[1].qty-a[1].qty);$('#reportProducts').innerHTML=pg.length?pg.slice(0,20).map(([k,v])=>`<div class="compact-item"><div><strong>${esc(k)}</strong><div class="muted small">${Number(v.qty).toLocaleString('pt-BR')} unidade(s)</div></div><span>${brl(v.total)}</span></div>`).join(''):'<div class="empty">Sem dados.</div>';const daily=Object.entries(x.reduce((o,v)=>{const k=String(v.created_at).slice(0,10);o[k]=(o[k]||0)+Number(v.total||0);return o},{})).sort((a,b)=>a[0].localeCompare(b[0]));const maxDaily=Math.max(1,...daily.map(v=>v[1]));$('#reportDaily').innerHTML=daily.length?daily.map(([k,v])=>`<div class="bar-row"><span>${new Date(k+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,v/maxDaily*100)}%"></div></div><strong>${brl(v)}</strong></div>`).join(''):'<div class="empty">Sem dados.</div>';const margin=fat?lucro/fat*100:0;$('#reportMargin').innerHTML=`<div class="metric"><span>Margem estimada</span><strong>${margin.toFixed(1).replace('.',',')}%</strong></div><div class="metric"><span>Lucro / venda</span><strong>${brl(x.length?lucro/x.length:0)}</strong></div>`;
   }
-  $('#exportReports')?.addEventListener('click',()=>{if(!reportCache.length)return toast('Atualize o relatório antes de exportar','error');const cols=['id','created_at','vendedor_nome','cliente_nome','tipo_pagamento','subtotal','desconto','total','custo_total','lucro'];const csv=[cols.join(';'),...reportCache.map(r=>cols.map(c=>`"${String(r[c]??'').replace(/"/g,'""')}"`).join(';'))].join('\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`relatorio-cahk-${$('#reportStart').value}-${$('#reportEnd').value}.csv`;a.click();URL.revokeObjectURL(a.href)});
+  async function monthlyTransparencyApi(action,payload={}){
+    const {data,error}=await sb.functions.invoke('management-admin',{body:{action,...payload}});
+    if(error)throw error;
+    if(data?.error)throw new Error(data.error);
+    return data;
+  }
+  function monthlyDefaultMonth(){
+    const fromReport=String($('#reportStart')?.value||'').slice(0,7);
+    if(/^\d{4}-\d{2}$/.test(fromReport))return fromReport;
+    const d=new Date();d.setMonth(d.getMonth()-1);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
+  function renderMonthlyTransparencyPreview(x){
+    const box=$('#monthlyTransparencyPreviewBox');if(!box)return;
+    if(!x){box.innerHTML='';return}
+    const detail=x.partial?'<span class="badge danger">PARCIAL — mês ainda não encerrado</span>':'<span class="badge">MÊS ENCERRADO</span>';
+    box.innerHTML=`<div class="section-head"><div><strong>Prévia da publicação</strong><div class="muted small">${new Date(x.period_start+'T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</div></div>${detail}</div>
+      <div class="metric-grid monthly-metric-grid">
+        <div class="metric"><span>Caixa no início</span><strong>${brl(x.opening_cash)}</strong></div>
+        <div class="metric"><span>Entrou</span><strong class="plus">${brl(x.inflows)}</strong></div>
+        <div class="metric"><span>Saiu</span><strong class="minus">${brl(x.outflows)}</strong></div>
+        <div class="metric"><span>Caixa final</span><strong>${brl(x.closing_cash)}</strong></div>
+        <div class="metric"><span>Produtos em estoque</span><strong>${brl(x.inventory_value)}</strong></div>
+        <div class="metric"><span>Total final</span><strong>${brl(x.closing_assets)}</strong></div>
+      </div>
+      <div class="muted small">${Number(x.sales_count||0)} venda(s) registrada(s) • vendas recebidas ${brl(x.direct_sales)} • recebimentos de fiado ${brl(x.fiado_received)} • compras de estoque ${brl(x.stock_purchases)}</div>`;
+  }
+  function monthlyTransparencyPayload(){
+    const month=$('#monthlyTransparencyMonth').value,raw=$('#monthlyOpeningCash').value;
+    if(!month)throw new Error('Escolha o mês da prestação');
+    if(raw==='')throw new Error('Informe quanto havia no caixa no começo do mês');
+    const opening=Number(raw);
+    if(!Number.isFinite(opening)||opening<0)throw new Error('Valor inicial inválido');
+    return {month,opening_cash:opening};
+  }
+  $('#exportReports')?.addEventListener('click',()=>{
+    const box=$('#monthlyTransparencyBox');if(!box)return;
+    box.classList.remove('hidden');
+    if(!$('#monthlyTransparencyMonth').value)$('#monthlyTransparencyMonth').value=monthlyDefaultMonth();
+    renderMonthlyTransparencyPreview(null);
+    box.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  $('#monthlyTransparencyClose')?.addEventListener('click',()=>$('#monthlyTransparencyBox')?.classList.add('hidden'));
+  $('#monthlyTransparencyPreview')?.addEventListener('click',async()=>{
+    try{
+      const p=monthlyTransparencyPayload();
+      toast('Calculando prestação…');
+      const d=await monthlyTransparencyApi('preview_monthly_transparency',p);
+      renderMonthlyTransparencyPreview(d.summary);
+    }catch(e){toast(errMsg(e),'error')}
+  });
+  $('#monthlyTransparencyPublish')?.addEventListener('click',async()=>{
+    try{
+      const p=monthlyTransparencyPayload();
+      const prev=await monthlyTransparencyApi('preview_monthly_transparency',p);
+      renderMonthlyTransparencyPreview(prev.summary);
+      const label=new Date(prev.summary.period_start+'T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+      const msg=prev.summary.partial
+        ?`Este mês ainda não terminou. Publicar uma prestação PARCIAL de ${label}? Você poderá atualizar o mesmo mês depois.`
+        :`Publicar a prestação de contas de ${label} na aba Transparência?`;
+      if(!confirm(msg))return;
+      const d=await monthlyTransparencyApi('publish_monthly_transparency',p);
+      renderMonthlyTransparencyPreview(d.summary);
+      toast(d.summary.partial?'Prestação parcial publicada.':'Prestação mensal publicada.');
+    }catch(e){toast(errMsg(e),'error')}
+  });
 
   // CONFIG
   $('#configForm').onsubmit=async e=>{e.preventDefault();const p={nome_empresa:$('#cfgName').value.trim(),cnpj:$('#cfgCnpj').value.trim()||null,telefone:$('#cfgPhone').value.trim()||null,endereco:$('#cfgAddress').value.trim()||null,mensagem_rodape:$('#cfgFooter').value.trim()||null,largura_impressao:Number($('#cfgWidth').value),updated_at:new Date().toISOString()};try{const{error}=await sb.from('configuracoes').update(p).eq('id',1);if(error)throw error;toast('Configurações salvas');await loadConfig()}catch(e){toast(errMsg(e),'error')}};
