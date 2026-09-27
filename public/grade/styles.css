@@ -1,0 +1,55 @@
+.academic-hero{padding-bottom:28px}
+.academic-title-row{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:30px;align-items:end}
+.academic-title-row>div:first-child>p{max-width:820px;color:var(--muted);font-size:15px;line-height:1.7;margin:0}
+.academic-live-card{border:1px solid var(--line);border-radius:18px;background:var(--surface);padding:17px 18px;box-shadow:var(--shadow)}
+.academic-live-card span{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:900}
+.academic-live-card strong{display:block;font-family:Georgia,"Times New Roman",serif;font-size:31px;font-weight:500;margin:5px 0 2px;color:var(--purple)}
+.academic-live-card small{display:block;color:var(--muted);font-size:9px;line-height:1.45}
+.academic-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:30px}
+.academic-tab{border:1px solid var(--line);background:var(--surface);color:var(--ink);min-height:42px;padding:0 14px;border-radius:999px;font:inherit;font-size:11px;font-weight:850;cursor:pointer}
+.academic-tab:hover,.academic-tab.active{background:var(--purple);border-color:var(--purple);color:#fff}
+.academic-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) minmax(190px,260px);gap:10px;margin-top:14px}
+.academic-toolbar input,.academic-toolbar select{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:0 14px;font:inherit}
+.academic-content-shell{padding-bottom:54px}
+.academic-section{margin-top:26px}
+.offering-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.offering-card{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:16px;min-width:0;box-shadow:var(--shadow)}
+.offering-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.offering-top>div{display:flex;gap:6px;flex-wrap:wrap}
+.course-code{display:inline-flex;align-items:center;min-height:24px;border-radius:7px;padding:0 7px;background:var(--purple-soft,#f2ecfb);color:var(--purple);font-size:9px;font-weight:900;letter-spacing:.04em}
+.ramal{color:var(--muted);font-size:9px;white-space:nowrap}
+.offering-card h3{font-size:15px;line-height:1.35;margin:13px 0 6px}
+.teacher-name{font-size:12px;font-weight:750;color:var(--ink)}
+.academic-contact{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.academic-link{display:inline-flex;align-items:center;justify-content:center;min-height:31px;border:1px solid var(--line);border-radius:8px;padding:0 9px;text-decoration:none;color:var(--purple);font-size:9px;font-weight:850}
+.academic-link:hover{border-color:var(--purple);background:var(--purple-soft,#f2ecfb)}
+.academic-email{width:100%;color:var(--muted);font-size:9px;overflow-wrap:anywhere}
+.academic-contact-missing{color:var(--muted);font-size:9px;line-height:1.35}
+.curriculum-list{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
+.curriculum-row{display:grid;grid-template-columns:90px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.curriculum-row:last-child{border-bottom:0}
+.curriculum-main{min-width:0}
+.curriculum-main strong{display:block;font-size:12px;line-height:1.35}
+.curriculum-main small{display:block;color:var(--muted);font-size:9px;line-height:1.4;margin-top:3px}
+.curriculum-row .hours{font-size:10px;color:var(--muted);white-space:nowrap}
+.faculty-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:22px}
+.faculty-card{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:16px;display:grid;grid-template-columns:52px minmax(0,1fr);gap:13px;box-shadow:var(--shadow)}
+.faculty-avatar{width:52px;height:52px;border-radius:14px;background:var(--purple-soft,#f2ecfb);color:var(--purple);display:grid;place-items:center;font-size:14px;font-weight:900}
+.faculty-body{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.faculty-body h3{font-size:15px;line-height:1.25;margin:1px 0 5px}
+.faculty-email{font-size:10px;color:var(--purple);text-decoration:none;overflow-wrap:anywhere}
+.faculty-courses{display:flex;flex-direction:column;gap:3px;width:100%;margin-top:9px}
+.faculty-courses span{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.faculty-page{min-height:31px;margin-top:10px;padding:0 10px;font-size:9px}
+.academic-sources{margin-top:34px;border:1px solid var(--line);border-radius:18px;background:var(--surface);padding:18px;box-shadow:var(--shadow)}
+.source-head{display:flex;justify-content:space-between;gap:18px;align-items:center}
+.source-head>div{display:flex;flex-direction:column;gap:3px}.source-head strong{font-size:13px}.source-head span{font-size:10px;color:var(--muted)}
+.source-state{display:inline-flex!important;min-height:27px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:0 9px;color:var(--purple)!important;font-weight:850}
+.source-links{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.academic-sources p{font-size:10px;color:var(--muted);line-height:1.55;margin:8px 0 0}
+:root[data-theme="dark"] .academic-live-card,:root[data-theme="dark"] .offering-card,:root[data-theme="dark"] .curriculum-list,:root[data-theme="dark"] .faculty-card,:root[data-theme="dark"] .academic-sources{background:#1a181f}
+:root[data-theme="dark"] .course-code,:root[data-theme="dark"] .faculty-avatar{background:#2a2137;color:#c7a7ff}
+:root[data-theme="dark"] .academic-link:hover{background:#2a2137}
+@media(max-width:980px){.offering-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.academic-title-row{grid-template-columns:1fr 230px}.faculty-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.academic-title-row{grid-template-columns:1fr}.academic-live-card{max-width:320px}.academic-toolbar{grid-template-columns:1fr}.offering-grid{grid-template-columns:1fr}.curriculum-row{grid-template-columns:74px minmax(0,1fr)}.curriculum-row .hours{grid-column:2}.source-head{align-items:flex-start;flex-direction:column}}
+@media(max-width:460px){.academic-tab{width:100%;justify-content:center}.curriculum-row{grid-template-columns:1fr;gap:7px}.curriculum-row .hours{grid-column:auto}.faculty-card{grid-template-columns:44px minmax(0,1fr)}.faculty-avatar{width:44px;height:44px}}
