@@ -27,3 +27,5 @@
 .monthly-transparency-preview .minus{color:#bb3d4c}
 :root[data-theme="dark"] .monthly-transparency-preview .plus{color:#79d79c}
 :root[data-theme="dark"] .monthly-transparency-preview .minus{color:#ff9ba8}
+/* CAHK v6.1.0 — gestão acadêmica */
+#view-academico .compact-item a.small{display:inline-block;margin-top:5px;color:var(--purple);font-size:10px;text-decoration:none}

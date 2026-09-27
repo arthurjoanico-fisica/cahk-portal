@@ -50,7 +50,7 @@
         <button data-view="mltn" data-perm="mltn">MLTN / POD</button>
         <button data-view="avisos" data-perm="notices">Avisos do Portal</button>
         <button data-view="biblioteca" data-perm="library">Biblioteca Virtual</button>
-        <button data-view="projetos" data-perm="projects">Projetos / IC</button>
+        <button data-view="academico" data-perm="library">Acadêmico / Disciplinas</button>
         <button data-view="produtos" data-perm="products">Produtos / Loja</button>
         <button data-view="vendedores" data-perm="pdv">Vendedores</button>
         <button data-view="clientes" data-perm="clients">Clientes</button>
@@ -283,7 +283,7 @@
               <label>ISBN<input id="libraryIsbn" maxlength="80"></label>
               <label>DOI<input id="libraryDoi" maxlength="220"></label>
               <label>Professor relacionado<input id="libraryProfessor" maxlength="220"></label>
-              <label>Semestre / período<input id="librarySemester" maxlength="80" placeholder="Ex.: 2º período"></label>
+              <label>Semestre / período<input id="librarySemester" maxlength="80" placeholder="Ex.: 2º período"></label><label class="span-2">Códigos das disciplinas<input id="libraryCourseCodes" maxlength="400" placeholder="Ex.: CF2413, CF2414"><span class="muted small">Permite que o livro apareça automaticamente na página da disciplina.</span></label>
               <label class="span-2">Descrição<textarea id="libraryDescription" rows="3" maxlength="4000"></textarea></label>
               <label class="span-2">Capa / miniatura<input id="libraryCoverFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">JPG, PNG ou WebP, até 5 MB.</span></label>
               <div id="libraryCoverPreview" class="media-preview span-2 hidden"></div>
@@ -301,31 +301,36 @@
         </div>
       </section>
 
-      <section id="view-projetos" class="view hidden">
+      <section id="view-academico" class="view hidden">
         <div class="grid-2">
           <div class="card">
-            <div class="section-head"><div><h2>Projeto / Iniciação Científica</h2><p class="muted small">Divulgue as pesquisas desenvolvidas pelos estudantes da Física.</p></div></div>
-            <form id="projectForm" class="form-grid">
-              <input id="projectId" type="hidden"><input id="projectImageUrl" type="hidden">
-              <label class="span-2">Título do projeto<input id="projectTitle" maxlength="260" required></label>
-              <label>Estudante<input id="projectStudent" maxlength="220"></label>
-              <label>Área / linha de pesquisa<input id="projectArea" maxlength="180" placeholder="Ex.: Matéria Condensada"></label><label>Laboratório / grupo<input id="projectLaboratory" maxlength="220"></label>
-              <label>Orientador(a)<input id="projectAdvisor" maxlength="220"></label>
-              <label>Coorientador(a)<input id="projectCoadvisor" maxlength="220"></label>
-              <label>Ano inicial<input id="projectYearStart" type="number" min="1900" max="2200"></label>
-              <label>Ano final<input id="projectYearEnd" type="number" min="1900" max="2200" placeholder="Deixe vazio se em andamento"></label>
-              <label>Status<select id="projectStatus"><option value="em_andamento">Em andamento</option><option value="concluida">Concluída</option><option value="pausada">Pausada</option></select></label>
-              <label>Ordem<input id="projectOrder" type="number" step="1" value="0"></label>
-              <label class="span-2">Palavras-chave<input id="projectKeywords" maxlength="500" placeholder="BFO, filmes finos, sensores"></label><label class="span-2">Financiamento / bolsa<input id="projectFunding" maxlength="300" placeholder="PIBIC, CNPq, Fundação Araucária..."></label><label class="span-2">Descrição<textarea id="projectDescription" rows="5" maxlength="5000"></textarea></label>
-              <label class="span-2">Imagem do projeto<input id="projectImageFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
-              <div id="projectImagePreview" class="media-preview span-2 hidden"></div>
-              <label class="span-2">Link principal do projeto<input id="projectUrl" type="url" placeholder="https://..."></label><label>Lattes<input id="projectLattes" type="url"></label><label>ORCID<input id="projectOrcid" type="url"></label><label>DOI<input id="projectDoi" placeholder="10.xxxx/..."></label><label>E-mail de contato<input id="projectContact" type="email"></label><label class="span-2">Link do pôster / apresentação<input id="projectPoster" type="url"></label>
-              <label class="check-line"><input id="projectActive" type="checkbox" checked>Publicado</label>
-              <label class="check-line"><input id="projectFeatured" type="checkbox">Destaque</label>
-              <div class="row span-2"><button class="primary" type="submit">Salvar projeto</button><button id="clearProject" class="ghost" type="button">Novo / limpar</button></div>
+            <div class="section-head"><div><h2>Recurso por disciplina</h2><p class="muted small">Cadastre monitorias, provas antigas, listas, materiais e links que aparecem na página de cada disciplina.</p></div></div>
+            <form id="academicResourceForm" class="form-grid">
+              <input id="academicResourceId" type="hidden">
+              <label>Código da disciplina<input id="academicResourceCode" maxlength="12" required placeholder="CF2402"></label>
+              <label>Tipo<select id="academicResourceType"><option value="monitoria">Monitoria</option><option value="prova">Prova antiga</option><option value="lista">Lista</option><option value="material">Material</option><option value="link">Link útil</option></select></label>
+              <label class="span-2">Título<input id="academicResourceTitle" maxlength="220" required placeholder="Ex.: Monitoria de Física Geral II"></label>
+              <label>Semestre<input id="academicResourceSemester" maxlength="40" placeholder="2026/2"></label>
+              <label>Responsável / monitor<input id="academicResourcePerson" maxlength="220"></label>
+              <label>Contato<input id="academicResourceContact" maxlength="320" placeholder="e-mail, WhatsApp..."></label>
+              <label>Horário / local<input id="academicResourceSchedule" maxlength="500" placeholder="Qua 08:30–10:30 • Sala ..."></label>
+              <label class="span-2">Link<input id="academicResourceUrl" type="url" placeholder="https://..."></label>
+              <label class="span-2">Descrição<textarea id="academicResourceDescription" rows="3" maxlength="2500"></textarea></label>
+              <label class="check-line"><input id="academicResourceActive" type="checkbox" checked>Publicado</label>
+              <label>Ordem<input id="academicResourceOrder" type="number" step="1" value="0"></label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar recurso</button><button id="academicResourceClear" class="ghost" type="button">Novo / limpar</button></div>
             </form>
           </div>
-          <div class="card"><div class="section-head"><div><h2>Projetos cadastrados</h2><p class="muted small">Gerencie as ICs que aparecem no portal.</p></div><button id="refreshProjects" class="ghost" type="button">Atualizar</button></div><div id="projectAdminList" class="compact-list"></div></div>
+          <div class="card"><div class="section-head"><div><h2>Recursos publicados</h2><p class="muted small">Conteúdo acadêmico complementar por disciplina.</p></div><button id="academicResourceRefresh" class="ghost">Atualizar</button></div><div id="academicResourceList" class="compact-list"></div></div>
+        </div>
+        <div class="card">
+          <div class="section-head"><div><h2>Envios dos alunos</h2><p class="muted small">Links enviados pelas páginas das disciplinas. Só aparecem publicamente após aprovação.</p></div><button id="academicSubmissionRefresh" class="ghost">Atualizar</button></div>
+          <div id="academicSubmissionList" class="compact-list"></div>
+        </div>
+        <div class="card">
+          <div class="section-head"><div><h2>Sincronização da Física UFPR</h2><p class="muted small">A grade, docentes e ofertas são atualizados automaticamente pelo backend.</p></div></div>
+          <p class="muted small">A página pública usa a matriz curricular oficial, o quadro de encargos didáticos mais recente e o cadastro público de docentes. A sincronização automática ocorre diariamente.</p>
+          <div class="row"><a class="ghost button-link" href="/grade/" target="_blank">Abrir Grade</a><a class="ghost button-link" href="/minha-fisica/" target="_blank">Abrir Minha Física</a></div>
         </div>
       </section>
 
@@ -468,7 +473,7 @@
     </main>
   </div>
 
-  <script src="app.js?v=6.0.16"></script><script src="v6.js?v=6.0.16"></script>
+  <script src="app.js?v=6.1.0"></script><script src="v6.js?v=6.1.0"></script>
 
   <div id="mltnOrderModal" class="mltn-modal hidden" role="dialog" aria-modal="true" aria-labelledby="mltnModalTitle">
     <div class="mltn-modal-card">
