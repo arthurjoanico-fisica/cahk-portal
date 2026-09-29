@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="CAHK">
+  <title>Gestão CAHK</title><script>try{const t=localStorage.getItem('cahk-theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}</script>
+  <link rel="stylesheet" href="styles.css?v=6.1.1">
+  <link rel="stylesheet" href="/assets/cahk-subpages-v4.css?v=6.0.11">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="theme-color" content="#5b2bbf">
+</head>
+<body class="management-minimal">
+  <div id="toast"></div>
+
+  <section id="loginView" class="login-page">
+    <div class="login-card">
+      <img class="management-logo" src="/assets/cahk-logo-v32.png?v=4" alt="CAHK">
+      <h1>Gestão CAHK</h1>
+      <p class="muted">Caixa • Encomendas • Estoque • Relatórios</p>
+      <form id="loginForm" class="stack">
+        <label>E-mail<input id="loginEmail" type="email" autocomplete="username" required></label>
+        <label>Senha<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+        <button class="primary" type="submit">Entrar</button>
+        <div id="loginMsg" class="muted small"></div>
+      </form>
+    </div>
+  </section>
+
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <img class="sidebar-brand-logo" src="/assets/cahk-logo-v32.png?v=4" alt="CAHK">
+        <div><strong>Gestão CAHK</strong><span id="companyMini">Área restrita</span></div>
+      </div>
+      <nav id="nav">
+        <button data-view="dashboard" class="active">Visão geral</button>
+        <button data-view="pdv" data-perm="pdv">Balcão / PDV</button>
+        <button data-view="caixa" data-perm="cash">Caixa</button>
+        <button data-view="entrada" data-perm="stock">Entrada de estoque</button>
+        <button data-view="inventario" data-perm="inventory">Inventário físico</button>
+        <button data-view="vendas" data-perm="sales">Vendas</button>
+        <button data-view="fiado" data-perm="fiado">Fiado</button>
+        <button data-view="encomendas" data-perm="orders">Encomendas</button>
+        <button data-view="mltn" data-perm="mltn">MLTN / POD</button>
+        <button data-view="avisos" data-perm="notices">Avisos e Destaques</button>
+        <button data-view="biblioteca" data-perm="library">Biblioteca Virtual</button>
+        <button data-view="academico" data-perm="library">Acadêmico / Disciplinas</button>
+        <button data-view="produtos" data-perm="products">Produtos / Loja</button>
+        <button data-view="vendedores" data-perm="pdv">Vendedores</button>
+        <button data-view="clientes" data-perm="clients">Clientes</button>
+        <button data-view="relatorios" data-perm="reports">Relatórios</button>
+        <button data-view="transparencia" data-perm="transparency">Transparência</button>
+        <button data-view="usuarios" data-perm="users">Usuários e permissões</button>
+        <button data-view="auditoria" data-perm="audit">Registro de alterações</button>
+        <button data-view="backup" data-perm="backup">Backup / Exportação</button>
+        <button data-view="config" data-perm="config">Configurações</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div id="userName"></div>
+        <div id="userRole" class="muted small"></div>
+        <a class="management-portal-link" href="/">Voltar ao portal</a>
+        <button id="logoutBtn" class="ghost full">Sair</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div><h1 id="pageTitle">Visão geral</h1><div id="cashStatus" class="muted">Verificando caixa…</div></div>
+        <div id="clock"></div>
+      </header>
+
+      <section id="view-dashboard" class="view">
+        <div id="dashboardMetrics" class="metric-grid"></div>
+        <div class="grid-2 dashboard-grid">
+          <div class="card"><div class="section-head"><div><h2>Estoque que precisa de atenção</h2><p class="muted small">Produtos zerados ou abaixo do estoque mínimo.</p></div><button class="ghost" id="dashboardGoStock" type="button">Ver produtos</button></div><div id="dashboardLowStock" class="compact-list"></div></div>
+          <div class="card"><div class="section-head"><div><h2>Últimas vendas</h2><p class="muted small">Movimento mais recente do balcão.</p></div><button class="ghost" id="dashboardGoSales" type="button">Ver vendas</button></div><div id="dashboardRecentSales" class="compact-list"></div></div>
+        </div>
+        <div class="grid-2 dashboard-grid">
+          <div class="card"><h2>Portal e comunidade</h2><div id="dashboardPortal" class="compact-list"></div></div>
+          <div class="card"><h2>Validades próximas</h2><div id="dashboardExpiry" class="compact-list"><div class="empty">Carregando…</div></div></div>
+        </div>
+        <div class="card"><h2>Atalhos</h2><div class="dashboard-actions"><button class="primary" data-dash-view="pdv">Nova venda</button><button class="ghost" data-dash-view="entrada">Dar entrada</button><button class="ghost" data-dash-view="inventario">Inventário</button><button class="ghost" data-dash-view="encomendas">Encomendas</button><button class="ghost" data-dash-view="biblioteca">Biblioteca</button><a class="ghost button-link" href="/" target="_blank">Abrir portal</a></div></div>
+      </section>
+
+      <section id="view-pdv" class="view hidden">
+        <div class="pdv-grid">
+          <div class="card">
+            <div class="section-head"><h2>Produtos</h2><input id="productSearch" placeholder="Buscar nome ou código de barras"></div>
+            <div id="productGrid" class="product-grid"></div>
+          </div>
+          <div class="card cart-card">
+            <h2>Carrinho</h2>
+            <div id="cartItems" class="cart-list"></div>
+            <div class="cart-form">
+              <label>Vendedor<select id="saleSeller"></select></label>
+              <label>Pagamento<select id="paymentType"><option>Dinheiro</option><option>Pix</option><option>Cartão</option><option>Fiado</option></select></label>
+              <label id="clientWrap" class="hidden">Cliente do fiado<select id="saleClient"></select></label>
+              <label>Desconto (R$)<input id="saleDiscount" type="number" min="0" step="0.01" value="0"></label>
+              <label>Observação<input id="saleNote" placeholder="Opcional"></label>
+              <label class="check-line"><input id="printAfterSale" type="checkbox" checked>Imprimir comprovante após finalizar</label>
+            </div>
+            <div class="totals">
+              <div><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
+              <div><span>Desconto</span><strong id="discountPreview">R$ 0,00</strong></div>
+              <div class="grand"><span>Total</span><strong id="total">R$ 0,00</strong></div>
+            </div>
+            <button id="finishSale" class="primary full large">Finalizar venda</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-caixa" class="view hidden">
+        <div class="grid-2">
+          <div class="card"><h2>Status do caixa</h2><div id="cashDetail"></div></div>
+          <div class="card"><h2>Abrir / fechar</h2><div id="cashActions"></div></div>
+        </div>
+        <div class="card"><h2>Resumo do caixa aberto</h2><div id="cashSummary" class="metric-grid"></div></div>
+      </section>
+
+      <section id="view-entrada" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-head"><div><h2>Dar entrada no estoque</h2><p class="muted small">Some a quantidade recebida ao estoque atual sem substituir o valor existente.</p></div></div>
+            <form id="stockEntryForm" class="form-grid">
+              <label class="span-2">Produto<select id="stockEntryProduct" required></select></label>
+              <label>Quantidade que entrou<input id="stockEntryQty" type="number" min="0.001" step="0.001" required placeholder="Ex.: 24"></label>
+              <label>Custo unitário (opcional)<input id="stockEntryCost" type="number" min="0" step="0.01" placeholder="Ex.: 2,90"></label>
+              <label>Fornecedor<input id="stockEntrySupplier" placeholder="Ex.: Distribuidora X"></label>
+              <label>Lote<input id="stockEntryBatch" placeholder="Opcional"></label>
+              <label>Validade<input id="stockEntryExpiry" type="date"></label>
+              <label class="span-2">Motivo / origem<input id="stockEntryReason" placeholder="Ex.: Compra, reposição, doação"></label>
+              <div class="stock-current span-2" id="stockEntryCurrent">Selecione um produto.</div>
+              <div class="span-2"><button class="primary" type="submit">Confirmar entrada</button></div>
+            </form>
+          </div>
+          <div class="card"><div class="section-head"><div><h2>Entradas recentes</h2><p class="muted small">Histórico das últimas reposições registradas.</p></div><button id="refreshStockEntries" class="ghost" type="button">Atualizar</button></div><div id="stockEntryHistory" class="compact-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-inventario" class="view hidden">
+        <div class="grid-2">
+          <div class="card"><h2>Novo inventário físico</h2><p class="muted small">Cria uma fotografia do estoque atual para você conferir produto por produto.</p><form id="inventoryCreateForm" class="form-grid"><label class="span-2">Nome<input id="inventoryName" placeholder="Ex.: Inventário setembro/2026"></label><label class="span-2">Observação<input id="inventoryNote" placeholder="Opcional"></label><div class="span-2"><button class="primary" type="submit">Iniciar inventário</button></div></form></div>
+          <div class="card"><div class="section-head"><div><h2>Inventários</h2><p class="muted small">Abertos, concluídos e cancelados.</p></div><button id="refreshInventory" class="ghost" type="button">Atualizar</button></div><div id="inventoryList" class="compact-list"></div></div>
+        </div>
+        <div id="inventoryWorkspace" class="card hidden"><div class="section-head wrap"><div><h2 id="inventoryWorkspaceTitle">Contagem</h2><p id="inventoryWorkspaceMeta" class="muted small"></p></div><div class="row"><button id="inventorySaveAll" class="ghost" type="button">Salvar contagens</button><button id="inventoryClose" class="primary" type="button">Fechar e aplicar diferenças</button><button id="inventoryCancel" class="danger" type="button">Cancelar inventário</button></div></div><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Sistema</th><th>Contagem física</th><th>Diferença</th><th>Observação</th></tr></thead><tbody id="inventoryItems"></tbody></table></div></div>
+      </section>
+
+      <section id="view-vendas" class="view hidden">
+        <div class="card">
+          <div class="section-head wrap"><h2>Histórico de vendas</h2><div class="row"><input id="salesDate" type="date"><button id="refreshSales" class="ghost">Atualizar</button></div></div>
+          <div class="table-wrap"><table><thead><tr><th>#</th><th>Data</th><th>Vendedor</th><th>Pagamento</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead><tbody id="salesTable"></tbody></table></div>
+        </div>
+      </section>
+
+      <section id="view-fiado" class="view hidden">
+        <div class="card">
+          <h2>Contas em aberto</h2>
+          <div class="table-wrap"><table><thead><tr><th>Venda</th><th>Cliente</th><th>Data</th><th>Total</th><th>Pago</th><th>Saldo</th><th></th></tr></thead><tbody id="fiadoTable"></tbody></table></div>
+        </div>
+      </section>
+
+
+      <section id="view-encomendas" class="view hidden">
+        <div class="card">
+          <div class="section-head wrap">
+            <div>
+              <h2>Encomendas da Loja CAHK</h2>
+              <p class="muted small">Pedidos feitos pela loja pública. Encomenda só vira venda quando a gestão registrar no PDV.</p>
+            </div>
+            <div class="row">
+              <select id="orderStatusFilter">
+                <option value="">Todos os status</option>
+                <option value="nova">Novas</option>
+                <option value="confirmada">Confirmadas</option>
+                <option value="aguardando_pagamento">Aguardando pagamento</option>
+                <option value="paga">Pagas</option>
+                <option value="pronta">Prontas</option>
+                <option value="entregue">Entregues</option>
+                <option value="cancelada">Canceladas</option>
+              </select>
+              <button id="refreshOrders" class="ghost">Atualizar</button>
+            </div>
+          </div>
+          <div id="orderMetrics" class="metric-grid"></div>
+        </div>
+        <div id="ordersList" class="orders-grid"></div>
+      </section>
+
+
+      <section id="view-mltn" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-head"><div><h2>Configuração MLTN / Print on Demand</h2><p class="muted small">Central interna para organizar a produção sob demanda.</p></div></div>
+            <form id="mltnConfigForm" class="form-grid">
+              <label class="span-2">Pasta principal do Google Drive<input id="mltnDriveUrl" type="url" placeholder="https://drive.google.com/..."><span class="muted small">Use a pasta com estampas, mockups e especificações aprovadas de cada produto.</span></label>
+              <label class="span-2">Endereço do remetente MLTN<textarea id="mltnSenderAddress" rows="3">Rua Arnaldo Teixeira Lemos, 857 - Jardim Lima - Franca/SP - CEP 14403-108</textarea></label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar configuração</button><a id="mltnOpenDrive" class="ghost button-link" target="_blank" rel="noopener">Abrir Drive</a><a class="ghost button-link" href="https://melhorenvio.com.br/" target="_blank" rel="noopener">Abrir Melhor Envio</a></div>
+            </form>
+            <p class="muted small">A configuração é compartilhada com a gestão. Nenhum token ou senha do Melhor Envio é salvo no site.</p>
+          </div>
+          <div class="card">
+            <h2>Checklist para começar</h2>
+            <ol class="mltn-checklist">
+              <li>Escolher quais bases da MLTN serão vendidas.</li>
+              <li>Criar estampa e mockup de cada produto.</li>
+              <li>Organizar arte, mockup e especificação na pasta do Drive.</li>
+              <li>Produzir e aprovar as amostras.</li>
+              <li>Configurar o Melhor Envio usando o endereço da MLTN como remetente.</li>
+              <li>Quando entrar um pedido: confirmar pagamento, gerar etiqueta e enviar dados + etiqueta para produção.</li>
+            </ol>
+            <div class="mltn-links"><a class="ghost button-link" href="https://mltn.com.br/pages/pod-como-funciona" target="_blank" rel="noopener">Como funciona o POD</a><a class="ghost button-link" href="https://mltn.com.br/pages/catalago-de-produtos" target="_blank" rel="noopener">Catálogo MLTN</a></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-head"><div><h2>Estrutura recomendada do Drive</h2><p class="muted small">A MLTN informa que o Drive é a fonte das artes, mockups e especificações. Os pedidos em si são enviados com dados e etiqueta a cada venda.</p></div></div>
+          <pre class="drive-tree">CAHK - MLTN/
+├── 00_GUIA_E_PADROES/
+├── 01_CAMISETA_BASICA/
+│   ├── ARTE_APROVADA/
+│   ├── MOCKUPS/
+│   └── ESPECIFICACAO.txt
+├── 02_OVERSIZED/
+├── 03_MOLETOM/
+├── 04_OUTROS_PRODUTOS/
+└── 99_AMOSTRAS_APROVADAS/</pre>
+        </div>
+      </section>
+
+      <section id="view-avisos" class="view hidden">
+        <div class="card news-admin-card">
+          <div class="section-head"><div><h2>Destaques / Notícias</h2><p class="muted small">Use para eventos que já aconteceram, ações do CAHK e galerias que devem ficar expostas na página inicial.</p></div><button id="newsRefresh" class="ghost" type="button">Atualizar</button></div>
+          <div class="grid-2 news-admin-grid">
+            <form id="newsForm" class="form-grid">
+              <input id="newsId" type="hidden">
+              <label class="span-2">Título<input id="newsTitle" required maxlength="180" placeholder="Ex.: Copa CAHK 2026"></label>
+              <label>Data do acontecimento<input id="newsOccurredOn" type="date"></label>
+              <label>Local<input id="newsPlace" maxlength="220" placeholder="Ex.: Departamento de Física"></label>
+              <label class="span-2">Texto<textarea id="newsBody" rows="5" maxlength="5000" placeholder="Conte como foi o evento, resultados, agradecimentos ou informações importantes."></textarea></label>
+              <label class="span-2">Fotos da publicação<input id="newsImagesFile" type="file" accept="image/jpeg,image/png,image/webp" multiple><span class="muted small">Até 10 imagens. JPG, PNG ou WebP, até 5 MB cada. A primeira foto vira a capa.</span></label>
+              <div id="newsImagesPreview" class="news-admin-gallery span-2"></div>
+              <label>Manter na página inicial até<input id="newsHomeUntil" type="date"><span class="muted small">Deixe vazio para não expirar da página inicial.</span></label>
+              <label>Ordem<input id="newsOrder" type="number" value="0"></label>
+              <label>Texto do botão<input id="newsLinkLabel" placeholder="Saiba mais"></label>
+              <label>Link externo<input id="newsLink" type="url" placeholder="https://..."></label>
+              <label class="check-line"><input id="newsShowHome" type="checkbox" checked>Exibir na página inicial</label>
+              <label class="check-line"><input id="newsFeatured" type="checkbox">Destacar na página inicial</label>
+              <label class="check-line"><input id="newsActive" type="checkbox" checked>Publicado</label>
+              <div class="row span-2"><button class="primary" type="submit">Publicar destaque</button><button id="newsClear" class="ghost" type="button">Novo / limpar</button></div>
+            </form>
+            <div>
+              <div class="section-head"><div><h3>Publicações cadastradas</h3><p class="muted small">Podem continuar no arquivo de notícias mesmo quando não aparecem mais na página inicial.</p></div></div>
+              <div id="newsAdminList" class="compact-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2 quick-notices-grid">
+          <div class="card">
+            <div class="section-head"><div><h2>Avisos rápidos</h2><p class="muted small">Comunicados de texto e avisos futuros. Se tiver uma atividade futura, marque “Adicionar também à Agenda”.</p></div></div>
+            <form id="noticeForm" class="form-grid">
+              <input id="noticeId" type="hidden">
+              <input id="noticeImageUrl" type="hidden">
+              <label class="span-2">Título<input id="noticeTitle" required maxlength="180" placeholder="Ex.: CineCAHK — Devoradores de Estrelas"></label>
+              <label>Nível<select id="noticeLevel"><option value="info">Informativo</option><option value="important">Importante</option><option value="urgent">Urgente</option></select></label>
+              <label>Ordem<input id="noticeOrder" type="number" value="0"></label>
+              <label class="span-2">Texto<textarea id="noticeBody" rows="4" maxlength="3000" placeholder="Descrição, comunicado ou detalhes da atividade."></textarea></label>
+              <label>Exibir a partir de<input id="noticeStart" type="datetime-local"></label>
+              <label>Ocultar após<input id="noticeEnd" type="datetime-local"></label>
+              <label>Texto do botão<input id="noticeLinkLabel" placeholder="Saiba mais"></label>
+              <label>Link<input id="noticeLink" type="url" placeholder="https://..."></label>
+              <label class="span-2">Imagem do aviso<input id="noticeImageFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">Opcional. JPG, PNG ou WebP, até 5 MB. A imagem aparece junto ao aviso na página inicial e também na Agenda, quando ativada.</span></label>
+              <div id="noticeImagePreview" class="media-preview span-2 hidden"></div>
+              <label class="check-line span-2"><input id="noticeAgenda" type="checkbox">Adicionar também à Agenda</label>
+              <div id="noticeAgendaFields" class="form-grid span-2 hidden notice-agenda-fields">
+                <label>Data da atividade<input id="noticeEventDate" type="date"></label>
+                <label>Horário<input id="noticeEventTime" type="time"></label>
+                <label class="span-2">Local<input id="noticePlace" maxlength="220" placeholder="Ex.: Auditório da Física"></label>
+                <label class="check-line span-2"><input id="noticeFeatured" type="checkbox">Destacar na Agenda</label>
+              </div>
+              <label class="check-line"><input id="noticeActive" type="checkbox" checked>Publicado</label>
+              <label class="check-line"><input id="noticePinned" type="checkbox">Fixar primeiro</label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar aviso</button><button id="noticeClear" class="ghost" type="button">Novo / limpar</button></div>
+            </form>
+          </div>
+          <div class="card">
+            <div class="section-head"><div><h2>Avisos rápidos cadastrados</h2><p class="muted small">Os marcados com Agenda também aparecem em cahk.app/agenda.</p></div><button id="noticeRefresh" class="ghost" type="button">Atualizar</button></div>
+            <div id="noticeAdminList" class="compact-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-biblioteca" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-head"><div><h2>Biblioteca Virtual</h2><p class="muted small">Cadastre materiais por disciplina e envie a capa e o PDF.</p></div></div>
+            <form id="libraryForm" class="form-grid">
+              <input id="libraryId" type="hidden"><input id="libraryCoverUrl" type="hidden"><input id="libraryPdfUrl" type="hidden">
+              <label class="span-2">Título<input id="libraryTitle" maxlength="220" required></label>
+              <label>Autor / autores<input id="libraryAuthor" maxlength="220"></label>
+              <label>Disciplina<input id="libraryDiscipline" maxlength="120" required placeholder="Ex.: Física 1"></label>
+              <label>Tipo<select id="libraryType"><option value="livro">Livro</option><option value="apostila">Apostila</option><option value="artigo">Artigo</option><option value="lista">Lista</option><option value="outro">Outro</option></select></label>
+              <label>Ano da publicação<input id="libraryYear" type="number" min="1500" max="2200"></label>
+              <label>Edição<input id="libraryEdition" maxlength="120" placeholder="Ex.: 10ª edição"></label>
+              <label>ISBN<input id="libraryIsbn" maxlength="80"></label>
+              <label>DOI<input id="libraryDoi" maxlength="220"></label>
+              <label>Professor relacionado<input id="libraryProfessor" maxlength="220"></label>
+              <label>Semestre / período<input id="librarySemester" maxlength="80" placeholder="Ex.: 2º período"></label><label class="span-2">Códigos das disciplinas<input id="libraryCourseCodes" maxlength="400" placeholder="Ex.: CF2413, CF2414"><span class="muted small">Permite que o livro apareça automaticamente na página da disciplina.</span></label>
+              <label class="span-2">Descrição<textarea id="libraryDescription" rows="3" maxlength="4000"></textarea></label>
+              <label class="span-2">Capa / miniatura<input id="libraryCoverFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">JPG, PNG ou WebP, até 5 MB.</span></label>
+              <div id="libraryCoverPreview" class="media-preview span-2 hidden"></div>
+              <label class="span-2">PDF do material<input id="libraryPdfFile" type="file" accept="application/pdf,.pdf"><span class="muted small">PDF até 50 MB. Use apenas material que o CAHK tenha autorização para disponibilizar.</span></label>
+              <label class="span-2">Ou link externo oficial<input id="libraryExternalUrl" type="url" placeholder="https://..."></label>
+              <label class="span-2">Observação sobre direitos / licença<input id="libraryRightsNote" maxlength="800" placeholder="Ex.: Domínio público, CC BY, autorização do autor..."></label>
+              <label class="check-line span-2"><input id="libraryRights" type="checkbox">Confirmo que o CAHK pode disponibilizar este material</label>
+              <label class="check-line"><input id="libraryActive" type="checkbox" checked>Publicado</label>
+              <label class="check-line"><input id="libraryFeatured" type="checkbox">Destaque</label>
+              <label>Ordem<input id="libraryOrder" type="number" step="1" value="0"></label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar material</button><button id="clearLibrary" class="ghost" type="button">Novo / limpar</button></div>
+            </form>
+          </div>
+          <div class="card"><div class="section-head"><div><h2>Materiais cadastrados</h2><p class="muted small">Edite, pause ou exclua itens da biblioteca.</p></div><button id="refreshLibrary" class="ghost" type="button">Atualizar</button></div><div id="libraryAdminList" class="compact-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-academico" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-head"><div><h2>Recurso por disciplina</h2><p class="muted small">Cadastre monitorias, provas antigas, listas, materiais e links que aparecem na página de cada disciplina.</p></div></div>
+            <form id="academicResourceForm" class="form-grid">
+              <input id="academicResourceId" type="hidden">
+              <label>Código da disciplina<input id="academicResourceCode" maxlength="12" required placeholder="CF2402"></label>
+              <label>Tipo<select id="academicResourceType"><option value="monitoria">Monitoria</option><option value="prova">Prova antiga</option><option value="lista">Lista</option><option value="material">Material</option><option value="link">Link útil</option></select></label>
+              <label class="span-2">Título<input id="academicResourceTitle" maxlength="220" required placeholder="Ex.: Monitoria de Física Geral II"></label>
+              <label>Semestre<input id="academicResourceSemester" maxlength="40" placeholder="2026/2"></label>
+              <label>Responsável / monitor<input id="academicResourcePerson" maxlength="220"></label>
+              <label>Contato<input id="academicResourceContact" maxlength="320" placeholder="e-mail, WhatsApp..."></label>
+              <label>Horário / local<input id="academicResourceSchedule" maxlength="500" placeholder="Qua 08:30–10:30 • Sala ..."></label>
+              <label class="span-2">Link<input id="academicResourceUrl" type="url" placeholder="https://..."></label>
+              <label class="span-2">Descrição<textarea id="academicResourceDescription" rows="3" maxlength="2500"></textarea></label>
+              <label class="check-line"><input id="academicResourceActive" type="checkbox" checked>Publicado</label>
+              <label>Ordem<input id="academicResourceOrder" type="number" step="1" value="0"></label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar recurso</button><button id="academicResourceClear" class="ghost" type="button">Novo / limpar</button></div>
+            </form>
+          </div>
+          <div class="card"><div class="section-head"><div><h2>Recursos publicados</h2><p class="muted small">Conteúdo acadêmico complementar por disciplina.</p></div><button id="academicResourceRefresh" class="ghost">Atualizar</button></div><div id="academicResourceList" class="compact-list"></div></div>
+        </div>
+        <div class="card">
+          <div class="section-head"><div><h2>Envios dos alunos</h2><p class="muted small">Links enviados pelas páginas das disciplinas. Só aparecem publicamente após aprovação.</p></div><button id="academicSubmissionRefresh" class="ghost">Atualizar</button></div>
+          <div id="academicSubmissionList" class="compact-list"></div>
+        </div>
+        <div class="card">
+          <div class="section-head"><div><h2>Sincronização da Física UFPR</h2><p class="muted small">A grade, docentes e ofertas são atualizados automaticamente pelo backend.</p></div></div>
+          <p class="muted small">A página pública usa a matriz curricular oficial, o quadro de encargos didáticos mais recente e o cadastro público de docentes. A sincronização automática ocorre diariamente.</p>
+          <div class="row"><a class="ghost button-link" href="/grade/" target="_blank">Abrir Grade</a><a class="ghost button-link" href="/minha-fisica/" target="_blank">Abrir Minha Física</a></div>
+        </div>
+      </section>
+
+      <section id="view-produtos" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <h2>Cadastrar / editar produto</h2>
+            <form id="productForm" class="form-grid">
+              <input id="productId" type="hidden">
+              <label class="span-2">Nome<input id="pName" required></label>
+              <label>Categoria<input id="pCategory"></label>
+              <label>Código de barras<input id="pBarcode"></label>
+              <label>Preço de compra<input id="pCost" type="number" step="0.01" min="0" required></label>
+              <label>Preço de venda<input id="pPrice" type="number" step="0.01" min="0" required></label>
+              <label>Estoque mínimo<input id="pMinStock" type="number" step="0.001" value="0"></label>
+              <label class="check-line"><input id="pActive" type="checkbox" checked>Ativo</label>
+
+              <div class="store-box span-2">
+                <div class="store-box-head">
+                  <div><strong>Loja CAHK</strong><div class="muted small">Configurações públicas deste produto.</div></div>
+                  <label class="check-line"><input id="pStoreVisible" type="checkbox">Mostrar na loja</label>
+                </div>
+                <div class="form-grid store-fields">
+                  <label>Tipo de venda<select id="pStoreMode"><option value="encomenda">Sob encomenda</option><option value="estoque">Pronta entrega</option></select></label>
+                  <label>Prazo estimado (dias)<input id="pStoreLead" type="number" min="0" step="1" value="0"></label>
+                  <label class="span-2">Descrição para a loja<textarea id="pStoreDescription" rows="3" placeholder="Ex.: Moletom oficial do CAHK, tecido..." ></textarea></label>
+                  <input id="pStoreImage" type="hidden"><label class="span-2">Imagem do produto<input id="pStoreImageFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">Envie uma foto da camiseta, moletom ou outro produto. JPG, PNG ou WebP, até 5 MB.</span></label><div id="pStoreImagePreview" class="media-preview span-2 hidden"></div>
+                  <label>Ordem na loja<input id="pStoreOrder" type="number" step="1" value="0"></label>
+                  <label class="check-line"><input id="pStoreFeatured" type="checkbox">Destaque</label>
+                </div>
+                <div class="store-box span-2" style="margin-top:12px"><div class="store-box-head"><div><strong>Produção MLTN</strong><div class="muted small">Vincule o produto à base e à pasta de produção.</div></div><label class="check-line"><input id="pMltnEnabled" type="checkbox">Produzido pela MLTN</label></div><div class="form-grid"><label>Base / modelo MLTN<input id="pMltnBase" placeholder="Ex.: Camiseta Básica"></label><label>Drive específico<input id="pMltnDrive" type="url" placeholder="https://drive.google.com/..."></label><label class="span-2">Observações de produção<textarea id="pMltnNotes" rows="3" placeholder="Cor, área de estampa, tecido, instruções..."></textarea></label></div></div>
+                <div id="variantEditor" class="variant-editor hidden">
+                  <div class="section-head"><h3>Variações / tamanhos</h3><button id="addVariant" type="button" class="ghost">Adicionar</button></div>
+                  <div id="variantList" class="compact-list"></div>
+                  <p class="muted small">Ex.: PP, P, M, G, GG. Salve o produto antes de cadastrar variações.</p>
+                </div>
+              </div>
+
+              <div class="row span-2"><button class="primary" type="submit">Salvar produto</button><button id="clearProduct" class="ghost" type="button">Limpar</button></div>
+            </form>
+          </div>
+          <div class="card"><h2>Estoque</h2><p class="muted small">Use “Ajustar” para mudar estoque; o histórico é preservado.</p><div id="adminProducts" class="compact-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-vendedores" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <h2>Cadastrar vendedor</h2>
+            <form id="sellerForm" class="form-grid">
+              <input id="sellerId" type="hidden">
+              <label>Código<input id="sCode" required></label>
+              <label>Nome<input id="sName" required></label>
+              <label class="span-2">Telefone<input id="sPhone"></label>
+              <label class="check-line span-2"><input id="sActive" type="checkbox" checked>Ativo</label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar vendedor</button><button id="clearSeller" class="ghost" type="button">Limpar</button></div>
+            </form>
+          </div>
+          <div class="card"><h2>Vendedores</h2><div id="sellerList" class="compact-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-clientes" class="view hidden">
+        <div class="grid-2">
+          <div class="card">
+            <h2>Cadastrar cliente</h2>
+            <form id="clientForm" class="form-grid">
+              <input id="clientId" type="hidden">
+              <label class="span-2">Nome<input id="cName" required></label>
+              <label class="span-2">Telefone<input id="cPhone"></label>
+              <label class="check-line span-2"><input id="cActive" type="checkbox" checked>Ativo</label>
+              <div class="row span-2"><button class="primary" type="submit">Salvar cliente</button><button id="clearClient" class="ghost" type="button">Limpar</button></div>
+            </form>
+          </div>
+          <div class="card"><h2>Clientes</h2><div id="clientList" class="compact-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-relatorios" class="view hidden">
+        <div class="card">
+          <div class="section-head wrap"><h2>Resumo por período</h2><div class="row"><input id="reportStart" type="date"><input id="reportEnd" type="date"><button id="refreshReports" class="ghost">Atualizar</button><button id="exportReports" class="primary" type="button">Publicar na Transparência</button></div></div>
+          <div id="reportMetrics" class="metric-grid"></div>
+        </div>
+
+        <div id="monthlyTransparencyBox" class="card hidden">
+          <div class="section-head wrap">
+            <div>
+              <h2>Prestação de contas mensal</h2>
+              <p class="muted small">O sistema calcula as entradas, saídas, caixa final e valor dos produtos. Você informa apenas quanto havia no caixa no começo do mês.</p>
+            </div>
+            <button id="monthlyTransparencyClose" class="ghost" type="button">Fechar</button>
+          </div>
+          <div class="form-grid">
+            <label>Mês da prestação
+              <input id="monthlyTransparencyMonth" type="month">
+            </label>
+            <label>Caixa no começo do mês
+              <input id="monthlyOpeningCash" type="number" min="0" step="0.01" placeholder="0,00">
+            </label>
+            <div class="row span-2">
+              <button id="monthlyTransparencyPreview" class="ghost" type="button">Calcular prévia</button>
+              <button id="monthlyTransparencyPublish" class="primary" type="button">Publicar / atualizar mês</button>
+            </div>
+          </div>
+          <div id="monthlyTransparencyPreviewBox" class="monthly-transparency-preview"></div>
+          <p class="muted small">Entradas automáticas: vendas recebidas + recebimentos de fiado. Saídas automáticas: compras de estoque registradas com custo. O estoque final é valorizado pelo custo de compra cadastrado.</p>
+        </div>
+        <div class="grid-2"><div class="card"><h2>Por pagamento</h2><div id="reportPayments"></div></div><div class="card"><h2>Por vendedor</h2><div id="reportSellers"></div></div></div>
+        <div class="card"><h2>Produtos mais vendidos</h2><div id="reportProducts"></div></div><div class="grid-2"><div class="card"><h2>Faturamento por dia</h2><div id="reportDaily" class="bar-chart"></div></div><div class="card"><h2>Margem no período</h2><div id="reportMargin" class="bar-chart"></div></div></div>
+      </section>
+
+      <section id="view-transparencia" class="view hidden">
+        <div class="grid-2"><div class="card"><h2>Documento de transparência</h2><form id="transparencyForm" class="form-grid"><input id="transparencyId" type="hidden"><input id="transparencyFileUrl" type="hidden"><label class="span-2">Título<input id="transparencyTitle" required maxlength="220"></label><label>Categoria<input id="transparencyCategory" value="Documento"></label><label>Data de referência<input id="transparencyDate" type="date"></label><label>Valor relacionado (opcional)<input id="transparencyAmount" type="number" step="0.01"></label><label>Ordem<input id="transparencyOrder" type="number" value="0"></label><label class="span-2">Descrição<textarea id="transparencyDescription" rows="4"></textarea></label><label class="span-2">PDF<input id="transparencyFile" type="file" accept="application/pdf,.pdf"></label><label class="span-2">Ou link externo<input id="transparencyExternal" type="url"></label><label class="check-line span-2"><input id="transparencyActive" type="checkbox" checked>Publicado</label><div class="row span-2"><button class="primary" type="submit">Salvar documento</button><button id="transparencyClear" class="ghost" type="button">Novo / limpar</button></div></form></div><div class="card"><div class="section-head"><h2>Documentos publicados</h2><button id="transparencyRefresh" class="ghost" type="button">Atualizar</button></div><div id="transparencyAdminList" class="compact-list"></div></div></div>
+      </section>
+
+      <section id="view-usuarios" class="view hidden">
+        <div class="grid-2"><div class="card"><h2>Convidar usuário</h2><form id="staffInviteForm" class="form-grid"><label class="span-2">Nome<input id="staffInviteName" required></label><label class="span-2">E-mail<input id="staffInviteEmail" type="email" required></label><label class="span-2">Função<select id="staffInviteRole"><option value="caixa">Caixa</option><option value="tesouraria">Tesouraria</option><option value="loja">Loja</option><option value="comunicacao">Comunicação</option><option value="biblioteca">Biblioteca</option><option value="pesquisa">Pesquisa / IC</option><option value="admin">Administrador</option></select></label><div class="span-2"><button class="primary" type="submit">Enviar convite</button></div></form><p class="muted small">Depois, as permissões individuais podem ser ajustadas no usuário.</p></div><div class="card"><div class="section-head"><h2>Equipe com acesso</h2><button id="staffRefresh" class="ghost" type="button">Atualizar</button></div><div id="staffList" class="compact-list"></div></div></div>
+        <div id="staffEditor" class="card hidden"><div class="section-head"><h2>Permissões do usuário</h2><button id="staffEditorClose" class="ghost" type="button">Fechar</button></div><form id="staffEditForm" class="form-grid"><input id="staffEditId" type="hidden"><label>Nome<input id="staffEditName"></label><label>Função<select id="staffEditRole"><option value="caixa">Caixa</option><option value="tesouraria">Tesouraria</option><option value="loja">Loja</option><option value="comunicacao">Comunicação</option><option value="biblioteca">Biblioteca</option><option value="pesquisa">Pesquisa / IC</option><option value="admin">Administrador</option></select></label><label class="check-line span-2"><input id="staffEditActive" type="checkbox" checked>Acesso ativo</label><div class="span-2"><strong>Permissões extras</strong><div id="staffPermissionGrid" class="permission-grid"></div></div><div class="span-2"><button class="primary" type="submit">Salvar acesso</button></div></form></div>
+      </section>
+
+      <section id="view-auditoria" class="view hidden"><div class="card"><div class="section-head wrap"><div><h2>Registro de alterações</h2><p class="muted small">Quem alterou o quê e quando.</p></div><div class="row"><select id="auditEntity"><option value="">Todas as áreas</option></select><button id="auditRefresh" class="ghost" type="button">Atualizar</button></div></div><div id="auditList" class="audit-list"></div></div></section>
+
+      <section id="view-backup" class="view hidden"><div class="grid-2"><div class="card"><h2>Backup completo</h2><p class="muted">Gera um arquivo JSON com produtos, vendas, estoque, encomendas, portal, biblioteca, projetos, inventários e registros administrativos.</p><button id="backupDownload" class="primary" type="button">Baixar backup JSON</button></div><div class="card"><h2>Exportações rápidas</h2><p class="muted">Use os relatórios para publicar a prestação de contas mensal na Transparência e o backup completo para arquivamento da gestão.</p><button id="backupReportShortcut" class="ghost" type="button">Ir para Relatórios</button></div></div></section>
+
+      <section id="view-config" class="view hidden">
+        <div class="card narrow">
+          <h2>Configurações do comprovante</h2>
+          <form id="configForm" class="form-grid">
+            <label class="span-2">Nome da organização<input id="cfgName" required></label>
+            <label>CNPJ<input id="cfgCnpj"></label>
+            <label>Telefone<input id="cfgPhone"></label>
+            <label class="span-2">Endereço<input id="cfgAddress"></label>
+            <label class="span-2">Mensagem de rodapé<input id="cfgFooter"></label>
+            <label>Largura da impressora<select id="cfgWidth"><option value="80">80 mm</option><option value="58">58 mm</option></select></label>
+            <div class="span-2"><button class="primary" type="submit">Salvar configurações</button></div>
+          </form>
+          <p class="muted small">O comprovante é interno/não fiscal. NFC-e exige integração fiscal específica.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js?v=6.1.1"></script><script src="v6.js?v=6.1.2"></script><script src="news-admin.js?v=6.1.1"></script>
+
+  <div id="mltnOrderModal" class="mltn-modal hidden" role="dialog" aria-modal="true" aria-labelledby="mltnModalTitle">
+    <div class="mltn-modal-card">
+      <div class="section-head"><div><h2 id="mltnModalTitle">Preparar pedido MLTN</h2><p class="muted small">Resumo para produção e geração da etiqueta.</p></div><button id="closeMltnModal" class="ghost" type="button">Fechar</button></div>
+      <textarea id="mltnOrderText" rows="14" readonly></textarea><div class="form-grid mltn-fulfillment"><input id="mltnEditOrderId" type="hidden"><label>Status da produção<select id="mltnFulfillmentStatus"><option value="aguardando">Aguardando</option><option value="arte">Preparando arte</option><option value="enviado_mltn">Enviado à MLTN</option><option value="producao">Em produção</option><option value="postado">Postado</option><option value="entregue">Entregue</option></select></label><label>Referência MLTN<input id="mltnRef"></label><label class="span-2">Pasta do pedido no Drive<input id="mltnOrderDrive" type="url"></label><label>Transportadora / serviço<input id="mltnShippingService"></label><label>Código de rastreio<input id="mltnTrackingCode"></label><label class="span-2">Link de rastreio<input id="mltnTrackingUrl" type="url"></label><label class="span-2">Link da etiqueta<input id="mltnLabelUrl" type="url"></label><label class="span-2">Notas de produção<textarea id="mltnProductionNotes" rows="3"></textarea></label></div>
+      <div class="row mltn-modal-actions"><button id="saveMltnFulfillment" class="primary" type="button">Salvar produção</button><button id="copyMltnOrder" class="ghost" type="button">Copiar dados do pedido</button><a id="modalOpenDrive" class="ghost button-link" target="_blank" rel="noopener">Abrir Drive</a><a class="ghost button-link" href="https://melhorenvio.com.br/" target="_blank" rel="noopener">Gerar etiqueta</a></div>
+    </div>
+  </div>
+
+<script src="/theme-everywhere.js?v=6.0.12"></script></body>
+</html>
