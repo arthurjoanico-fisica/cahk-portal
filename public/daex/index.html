@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>DAEX • Login</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <div class="brand">
+        <div class="mark">Σ</div>
+        <div>
+          <strong>DAEX</strong>
+          <span>Diretório Acadêmico de Exatas</span>
+        </div>
+      </div>
+
+      <p class="eyebrow">Módulo interno</p>
+      <h1>Entrar no DAEX</h1>
+      <p class="muted">Acesso separado da Gestão CAHK.</p>
+
+      <form id="login-form">
+        <label>
+          Usuário
+          <input id="username" autocomplete="username" placeholder="caixadaex" required />
+        </label>
+
+        <label>
+          Senha
+          <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+        </label>
+
+        <p id="error" class="error" hidden></p>
+        <button id="submit" type="submit">Entrar</button>
+      </form>
+
+      <p class="foot">cahk.app/daex</p>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

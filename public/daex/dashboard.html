@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>DAEX • Caixa</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .dashboard{width:min(100%,980px);padding:28px;border-radius:24px;border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.94)}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:26px}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .module{display:block;text-decoration:none;color:#f8fafc;border:1px solid #334155;background:#0b1220;border-radius:16px;padding:18px}
+    .module strong{display:block;margin-bottom:6px}.module span{color:#94a3b8;font-size:13px}
+    .secondary{background:#1e293b}
+    @media(max-width:720px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="dashboard">
+      <div class="top">
+        <div>
+          <p class="eyebrow">Sessão DAEX</p>
+          <h1>Caixa DAEX</h1>
+          <p class="muted" style="margin-bottom:0">Módulo conectado ao cahk.app.</p>
+        </div>
+        <button id="logout" class="secondary">Sair</button>
+      </div>
+
+      <div class="grid">
+        <a class="module" href="#"><strong>Eventos</strong><span>Criação e fechamento dos eventos.</span></a>
+        <a class="module" href="#"><strong>PDV</strong><span>Vendas, pagamentos e emissão de vales.</span></a>
+        <a class="module" href="#"><strong>Vales</strong><span>Consulta e validação de uso único.</span></a>
+        <a class="module" href="#"><strong>Estoque</strong><span>Entradas, saídas e saldo por produto.</span></a>
+        <a class="module" href="#"><strong>Financeiro</strong><span>Aportes, despesas e resultado do evento.</span></a>
+        <a class="module" href="#"><strong>Relatórios</strong><span>Fechamento, rateio e exportações.</span></a>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./dashboard.js"></script>
+</body>
+</html>
