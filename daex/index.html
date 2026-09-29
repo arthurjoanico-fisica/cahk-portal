@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#111827" />
+  <title>DAEX • Acesso</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <main class="shell">
+    <section class="login-card" aria-labelledby="login-title">
+      <div class="brand">
+        <div class="brand-mark">Σ</div>
+        <div>
+          <strong>DAEX</strong>
+          <span>Diretório Acadêmico de Exatas</span>
+        </div>
+      </div>
+
+      <div class="copy">
+        <p class="eyebrow">Acesso restrito</p>
+        <h1 id="login-title">Entrar no DAEX</h1>
+        <p>Use as credenciais exclusivas do módulo DAEX.</p>
+      </div>
+
+      <form id="login-form" novalidate>
+        <label>
+          Usuário
+          <input
+            id="username"
+            name="username"
+            autocomplete="username"
+            placeholder="caixadaex"
+            required
+          />
+        </label>
+
+        <label>
+          Senha
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            required
+          />
+        </label>
+
+        <p id="login-error" class="message error" role="alert" hidden></p>
+
+        <button id="login-button" type="submit">
+          Entrar
+        </button>
+      </form>
+
+      <div id="session-panel" class="session-panel" hidden>
+        <p>Login realizado.</p>
+        <strong id="session-user"></strong>
+        <div class="actions">
+          <button id="go-dashboard" type="button">Ir para o DAEX</button>
+          <button id="logout-button" type="button" class="secondary">Sair</button>
+        </div>
+      </div>
+
+      <p class="footnote">
+        O acesso ao DAEX é independente da área de gestão do CAHK.
+      </p>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
