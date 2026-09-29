@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="CAHK">
   <title>CAHK — Centro Acadêmico Hugo Kremer</title>
   <meta name="description" content="Rádio, loja, avisos, biblioteca, grade curricular, Minha Física e serviços do Centro Acadêmico Hugo Kremer — Física UFPR.">
-  <meta name="cahk-build" content="6.0.11-painel-qrcode-dark-all">
+  <meta name="cahk-build" content="6.1.2-avisos-com-imagem">
   <script>try{const t=localStorage.getItem('cahk-theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}</script>
-  <link rel="stylesheet" href="/portal-v5.css?v=6.1.0">
+  <link rel="stylesheet" href="/portal-v5.css?v=6.1.2">
+  <link rel="stylesheet" href="/news.css?v=6.1.1">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
@@ -39,6 +40,7 @@
         <details class="nav-more">
           <summary>Mais <span aria-hidden="true">▾</span></summary>
           <div class="nav-more-menu">
+            <a href="/noticias/">Destaques / Notícias</a>
             <a href="/#avisos">Avisos</a>
             <a href="/transparencia/">Transparência</a>
             <a href="/historia/">História do CAHK</a>
@@ -82,6 +84,13 @@
       </div>
     </section>
 
+    <section class="news-section section-shell hidden" id="destaques" aria-labelledby="destaques-title">
+      <div class="section-heading-row news-heading">
+        <div class="section-kicker"><span></span><h2 id="destaques-title">Destaques do CAHK</h2></div>
+        <a class="text-link" href="/noticias/">Ver todos →</a>
+      </div>
+      <div id="newsHomeList" class="news-home-grid"><div class="notice-empty">Carregando destaques…</div></div>
+    </section>
 
     <section class="notice-section section-shell" id="avisos" aria-labelledby="avisos-title">
       <div class="section-heading-row notice-heading">
@@ -239,6 +248,7 @@
     </div>
   </footer>
 
-  <script src="/portal-v5.js?v=6.1.0"></script>
-<script src="/pwa.js?v=6.1.0"></script></body>
+  <script src="/portal-v5.js?v=6.1.2"></script>
+  <script src="/news-home.js?v=6.1.1"></script>
+<script src="/pwa.js?v=6.1.2"></script></body>
 </html>

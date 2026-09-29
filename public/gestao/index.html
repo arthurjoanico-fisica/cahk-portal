@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="CAHK">
   <title>Gestão CAHK</title><script>try{const t=localStorage.getItem('cahk-theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}</script>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=6.1.1">
   <link rel="stylesheet" href="/assets/cahk-subpages-v4.css?v=6.0.11">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
@@ -48,7 +48,7 @@
         <button data-view="fiado" data-perm="fiado">Fiado</button>
         <button data-view="encomendas" data-perm="orders">Encomendas</button>
         <button data-view="mltn" data-perm="mltn">MLTN / POD</button>
-        <button data-view="avisos" data-perm="notices">Avisos do Portal</button>
+        <button data-view="avisos" data-perm="notices">Avisos e Destaques</button>
         <button data-view="biblioteca" data-perm="library">Biblioteca Virtual</button>
         <button data-view="academico" data-perm="library">Acadêmico / Disciplinas</button>
         <button data-view="produtos" data-perm="products">Produtos / Loja</button>
@@ -233,9 +233,36 @@
       </section>
 
       <section id="view-avisos" class="view hidden">
-        <div class="grid-2">
+        <div class="card news-admin-card">
+          <div class="section-head"><div><h2>Destaques / Notícias</h2><p class="muted small">Use para eventos que já aconteceram, ações do CAHK e galerias que devem ficar expostas na página inicial.</p></div><button id="newsRefresh" class="ghost" type="button">Atualizar</button></div>
+          <div class="grid-2 news-admin-grid">
+            <form id="newsForm" class="form-grid">
+              <input id="newsId" type="hidden">
+              <label class="span-2">Título<input id="newsTitle" required maxlength="180" placeholder="Ex.: Copa CAHK 2026"></label>
+              <label>Data do acontecimento<input id="newsOccurredOn" type="date"></label>
+              <label>Local<input id="newsPlace" maxlength="220" placeholder="Ex.: Departamento de Física"></label>
+              <label class="span-2">Texto<textarea id="newsBody" rows="5" maxlength="5000" placeholder="Conte como foi o evento, resultados, agradecimentos ou informações importantes."></textarea></label>
+              <label class="span-2">Fotos da publicação<input id="newsImagesFile" type="file" accept="image/jpeg,image/png,image/webp" multiple><span class="muted small">Até 10 imagens. JPG, PNG ou WebP, até 5 MB cada. A primeira foto vira a capa.</span></label>
+              <div id="newsImagesPreview" class="news-admin-gallery span-2"></div>
+              <label>Manter na página inicial até<input id="newsHomeUntil" type="date"><span class="muted small">Deixe vazio para não expirar da página inicial.</span></label>
+              <label>Ordem<input id="newsOrder" type="number" value="0"></label>
+              <label>Texto do botão<input id="newsLinkLabel" placeholder="Saiba mais"></label>
+              <label>Link externo<input id="newsLink" type="url" placeholder="https://..."></label>
+              <label class="check-line"><input id="newsShowHome" type="checkbox" checked>Exibir na página inicial</label>
+              <label class="check-line"><input id="newsFeatured" type="checkbox">Destacar na página inicial</label>
+              <label class="check-line"><input id="newsActive" type="checkbox" checked>Publicado</label>
+              <div class="row span-2"><button class="primary" type="submit">Publicar destaque</button><button id="newsClear" class="ghost" type="button">Novo / limpar</button></div>
+            </form>
+            <div>
+              <div class="section-head"><div><h3>Publicações cadastradas</h3><p class="muted small">Podem continuar no arquivo de notícias mesmo quando não aparecem mais na página inicial.</p></div></div>
+              <div id="newsAdminList" class="compact-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2 quick-notices-grid">
           <div class="card">
-            <div class="section-head"><div><h2>Avisos do Portal</h2><p class="muted small">Um único cadastro para avisos e itens da Agenda. Se o aviso tiver data, marque “Adicionar à Agenda”.</p></div></div>
+            <div class="section-head"><div><h2>Avisos rápidos</h2><p class="muted small">Comunicados de texto e avisos futuros. Se tiver uma atividade futura, marque “Adicionar também à Agenda”.</p></div></div>
             <form id="noticeForm" class="form-grid">
               <input id="noticeId" type="hidden">
               <input id="noticeImageUrl" type="hidden">
@@ -247,13 +274,13 @@
               <label>Ocultar após<input id="noticeEnd" type="datetime-local"></label>
               <label>Texto do botão<input id="noticeLinkLabel" placeholder="Saiba mais"></label>
               <label>Link<input id="noticeLink" type="url" placeholder="https://..."></label>
+              <label class="span-2">Imagem do aviso<input id="noticeImageFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">Opcional. JPG, PNG ou WebP, até 5 MB. A imagem aparece junto ao aviso na página inicial e também na Agenda, quando ativada.</span></label>
+              <div id="noticeImagePreview" class="media-preview span-2 hidden"></div>
               <label class="check-line span-2"><input id="noticeAgenda" type="checkbox">Adicionar também à Agenda</label>
               <div id="noticeAgendaFields" class="form-grid span-2 hidden notice-agenda-fields">
                 <label>Data da atividade<input id="noticeEventDate" type="date"></label>
                 <label>Horário<input id="noticeEventTime" type="time"></label>
                 <label class="span-2">Local<input id="noticePlace" maxlength="220" placeholder="Ex.: Auditório da Física"></label>
-                <label class="span-2">Imagem para a Agenda<input id="noticeImageFile" type="file" accept="image/jpeg,image/png,image/webp"><span class="muted small">JPG, PNG ou WebP, até 5 MB.</span></label>
-                <div id="noticeImagePreview" class="media-preview span-2 hidden"></div>
                 <label class="check-line span-2"><input id="noticeFeatured" type="checkbox">Destacar na Agenda</label>
               </div>
               <label class="check-line"><input id="noticeActive" type="checkbox" checked>Publicado</label>
@@ -262,7 +289,7 @@
             </form>
           </div>
           <div class="card">
-            <div class="section-head"><div><h2>Avisos cadastrados</h2><p class="muted small">Os marcados com Agenda também aparecem em cahk.app/agenda.</p></div><button id="noticeRefresh" class="ghost" type="button">Atualizar</button></div>
+            <div class="section-head"><div><h2>Avisos rápidos cadastrados</h2><p class="muted small">Os marcados com Agenda também aparecem em cahk.app/agenda.</p></div><button id="noticeRefresh" class="ghost" type="button">Atualizar</button></div>
             <div id="noticeAdminList" class="compact-list"></div>
           </div>
         </div>
@@ -473,7 +500,7 @@
     </main>
   </div>
 
-  <script src="app.js?v=6.1.0"></script><script src="v6.js?v=6.1.0"></script>
+  <script src="app.js?v=6.1.1"></script><script src="v6.js?v=6.1.2"></script><script src="news-admin.js?v=6.1.1"></script>
 
   <div id="mltnOrderModal" class="mltn-modal hidden" role="dialog" aria-modal="true" aria-labelledby="mltnModalTitle">
     <div class="mltn-modal-card">
