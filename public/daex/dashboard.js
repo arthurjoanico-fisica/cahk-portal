@@ -1,6 +1,6 @@
 import { getValidSession, signOut } from './auth.js';
 import * as api from './api.js';
-import { cartTotals, financialSummary, distributeProfit, normalizeVoucherToken, csvEscape } from './logic.js';
+import { cartTotals, financialSummary, distributeProfit, expandPhysicalTickets, csvEscape } from './logic.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -22,16 +22,14 @@ const state = {
   registers: [],
   sales: [],
   saleItems: [],
-  vouchers: [],
   stockMovements: [],
   cart: new Map(),
-  lastVouchers: [],
-  scannerStream: null,
+  lastTickets: [],
 };
 
 const routeTitles = {
   overview: 'Visão geral', events: 'Eventos', entities: 'Entidades & Aportes', stock: 'Produtos & Estoque',
-  pdv: 'PDV', vouchers: 'Vales', finance: 'Financeiro', reports: 'Relatórios',
+  pdv: 'PDV', finance: 'Financeiro', reports: 'Relatórios',
 };
 
 function esc(value) {
@@ -46,7 +44,6 @@ function currentRegister() { return state.registers.find(c => c.status === 'aber
 function isFinanceRole() { return ['admin', 'tesouraria'].includes(state.profile?.role); }
 function isAdmin() { return state.profile?.role === 'admin'; }
 function canSell() { return ['admin', 'tesouraria', 'caixa'].includes(state.profile?.role); }
-function canValidateVoucher() { return ['admin', 'tesouraria', 'bar'].includes(state.profile?.role); }
 function eventRequired() {
   if (!selectedEvent()) { toast('Selecione ou crie um evento primeiro.', 'warning'); return false; }
   return true;
@@ -108,7 +105,6 @@ function applyRoleVisibility() {
     $$('[data-route="entities"],[data-route="finance"],[data-route="reports"]').forEach(el => el.hidden = true);
   }
   if (!canSell()) $('[data-route="pdv"]').hidden = true;
-  if (!canValidateVoucher()) $('[data-route="vouchers"]').hidden = true;
   if (!isFinanceRole()) $('[data-route="stock"]').hidden = true;
 }
 
@@ -130,7 +126,7 @@ async function loadBaseData() {
 
 async function loadEventData() {
   if (!state.selectedEventId) {
-    Object.assign(state, { eventEntities: [], contributions: [], expenses: [], products: [], registers: [], sales: [], saleItems: [], vouchers: [], stockMovements: [] });
+    Object.assign(state, { eventEntities: [], contributions: [], expenses: [], products: [], registers: [], sales: [], saleItems: [], stockMovements: [] });
     renderAll();
     return;
   }
@@ -142,11 +138,10 @@ async function loadEventData() {
     api.select('daex_produtos', { select: '*', evento_id: `eq.${id}`, order: 'nome.asc' }),
     api.select('daex_caixas', { select: '*', evento_id: `eq.${id}`, order: 'aberto_em.desc' }),
     canSell() || isFinanceRole() ? api.select('daex_vendas', { select: '*', evento_id: `eq.${id}`, order: 'created_at.desc', limit: 5000 }) : Promise.resolve([]),
-    api.select('daex_vales', { select: '*', evento_id: `eq.${id}`, order: 'id.desc', limit: 5000 }),
     isFinanceRole() ? api.select('daex_estoque_movimentos', { select: '*', evento_id: `eq.${id}`, order: 'created_at.desc', limit: 5000 }) : Promise.resolve([]),
   ];
-  const [eventEntities, contributions, expenses, products, registers, sales, vouchers, stockMovements] = await Promise.all(queries);
-  Object.assign(state, { eventEntities, contributions, expenses, products, registers, sales, vouchers, stockMovements });
+  const [eventEntities, contributions, expenses, products, registers, sales, stockMovements] = await Promise.all(queries);
+  Object.assign(state, { eventEntities, contributions, expenses, products, registers, sales, stockMovements });
 
   const saleIds = state.sales.map(s => s.id);
   state.saleItems = saleIds.length && isFinanceRole()
@@ -166,7 +161,6 @@ function renderAll() {
   renderProducts();
   renderStockMovements();
   renderPDV();
-  renderVouchers();
   renderFinance();
   renderReports();
 }
@@ -195,12 +189,11 @@ function summary() {
 function renderOverview() {
   const ev = selectedEvent();
   const s = summary();
-  const pendingVouchers = state.vouchers.filter(v => v.status === 'emitido').length;
   $('#overview-metrics').innerHTML = [
     metricCard('Vendas', fmtMoney(s.salesTotal)),
     metricCard('Resultado econômico', fmtMoney(s.result), 'vendas − CMV − despesas'),
     metricCard('Estoque a custo', fmtMoney(s.inventoryValue)),
-    metricCard('Vales pendentes', String(pendingVouchers)),
+    metricCard('Vendas concluídas', String(state.sales.filter(v => v.status === 'concluida').length)),
   ].join('');
 
   if (!ev) {
@@ -260,8 +253,8 @@ function renderProductOptions() {
 }
 
 function renderProducts() {
-  const rows = state.products.map(p => `<tr><td><strong>${esc(p.nome)}</strong><br><small>${esc(p.categoria || '')}</small></td><td>${fmtMoney(p.preco_venda)}</td><td>${fmtMoney(p.preco_custo)}</td><td>${p.estoque_atual}</td><td>${p.emitir_vale ? 'Sim' : 'Não'}</td><td><span class="badge ${p.ativo ? 'aberto' : 'cancelada'}">${p.ativo ? 'ativo' : 'inativo'}</span></td><td><button class="link" data-action="toggle-product" data-id="${p.id}">${p.ativo ? 'Desativar' : 'Ativar'}</button></td></tr>`).join('');
-  $('#products-table').innerHTML = rows ? `<table><thead><tr><th>Produto</th><th>Venda</th><th>Custo</th><th>Estoque</th><th>Vale</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty-state">Nenhum produto cadastrado.</div>';
+  const rows = state.products.map(p => `<tr><td><strong>${esc(p.nome)}</strong><br><small>${esc(p.categoria || '')}</small></td><td>${fmtMoney(p.preco_venda)}</td><td>${fmtMoney(p.preco_custo)}</td><td>${p.estoque_atual}</td><td>${p.emitir_vale ? esc(p.nome_vale || p.nome) : 'Não imprime'}</td><td><span class="badge ${p.ativo ? 'aberto' : 'cancelada'}">${p.ativo ? 'ativo' : 'inativo'}</span></td><td><button class="link" data-action="toggle-product" data-id="${p.id}">${p.ativo ? 'Desativar' : 'Ativar'}</button></td></tr>`).join('');
+  $('#products-table').innerHTML = rows ? `<table><thead><tr><th>Produto</th><th>Venda</th><th>Custo</th><th>Estoque</th><th>Vale impresso</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty-state">Nenhum produto cadastrado.</div>';
 }
 
 function renderStockMovements() {
@@ -286,7 +279,7 @@ function renderPDV() {
   const products = filteredProducts();
   grid.innerHTML = !ev ? '<div class="empty-state">Selecione um evento.</div>' : ev.status !== 'aberto' ? '<div class="empty-state">O evento precisa estar aberto para vender.</div>' : products.length ? products.map(p => `
     <button class="product-card" data-action="add-cart" data-id="${p.id}">
-      <span>${esc(p.categoria || 'Produto')}</span><strong>${esc(p.nome)}</strong><b>${fmtMoney(p.preco_venda)}</b><small>${p.estoque_atual} disponíveis${p.emitir_vale ? ' • gera vale' : ''}</small>
+      <span>${esc(p.categoria || 'Produto')}</span><strong>${esc(p.nome)}</strong><b>${fmtMoney(p.preco_venda)}</b><small>${p.estoque_atual} disponíveis${p.emitir_vale ? ' • imprime vale' : ''}</small>
     </button>`).join('') : '<div class="empty-state">Sem produtos disponíveis.</div>';
   renderCart();
   renderRegisterBox();
@@ -315,13 +308,6 @@ function renderRegisterBox() {
     box.innerHTML = `<div class="register-open"><span>Caixa fechado</span><div class="inline-fields"><input id="open-register-name" placeholder="Caixa 1" value="Caixa 1" /><input id="open-register-value" type="number" min="0" step="0.01" placeholder="Troco" value="${Number(selectedEvent()?.fundo_troco || 0)}" /></div><button class="btn subtle full" data-action="open-register">Abrir caixa</button></div>`;
   }
   renderCart();
-}
-
-function renderVouchers() {
-  const term = $('#voucher-search')?.value?.trim().toLowerCase() || '';
-  const list = state.vouchers.filter(v => !term || `${v.id} ${v.produto_nome} ${v.status}`.toLowerCase().includes(term)).slice(0, 300);
-  const rows = list.map(v => `<tr><td>#${String(v.id).padStart(6, '0')}</td><td>${esc(v.produto_nome)}</td><td>${fmtDateTime(v.emitido_em)}</td><td><span class="badge ${v.status}">${esc(v.status)}</span></td><td><button class="link" data-action="print-voucher" data-id="${v.id}">Imprimir</button></td></tr>`).join('');
-  $('#vouchers-table').innerHTML = rows ? `<table><thead><tr><th>Código</th><th>Produto</th><th>Emissão</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty-state">Nenhum vale.</div>';
 }
 
 function renderFinance() {
@@ -387,7 +373,7 @@ function renderReports() {
 function addToCart(productId, delta = 1) {
   const product = state.products.find(p => p.id === productId);
   if (!product) return;
-  const current = state.cart.get(productId) || { id: product.id, name: product.nome, price: Number(product.preco_venda), quantity: 0 };
+  const current = state.cart.get(productId) || { id: product.id, name: product.nome, ticketName: product.nome_vale || product.nome, emitTicket: Boolean(product.emitir_vale), price: Number(product.preco_venda), quantity: 0 };
   const next = Math.max(0, Math.min(Number(product.estoque_atual), current.quantity + delta));
   if (next === 0) state.cart.delete(productId); else state.cart.set(productId, { ...current, quantity: next });
   renderCart();
@@ -401,6 +387,9 @@ async function checkout() {
   if (!reg) return toast('Abra um caixa antes de vender.', 'warning');
   const items = cartArray();
   if (!items.length) return;
+
+  const hasTickets = items.some(i => i.emitTicket);
+  const printWin = hasTickets ? window.open('', '_blank', 'width=500,height=700') : null;
   const operationId = uuid();
   const payload = {
     p_evento_id: ev.id,
@@ -409,21 +398,28 @@ async function checkout() {
     p_itens: items.map(i => ({ produto_id: i.id, quantidade: i.quantity })),
     p_client_operation_id: operationId,
   };
+
   $('#checkout').disabled = true;
   $('#checkout').textContent = 'Finalizando...';
   try {
     const result = await api.rpc('daex_registrar_venda', payload);
     state.cart.clear();
-    state.lastVouchers = result?.vales || [];
+    state.lastTickets = result?.tickets || expandPhysicalTickets(
+      result?.venda_id,
+      items.filter(i => i.emitTicket).map(i => ({ ticketName: i.ticketName, quantity: i.quantity }))
+    );
     toast(`Venda #${result.venda_id} registrada: ${fmtMoney(result.total)}.`);
     await loadEventData();
-    renderLastVouchers();
+    renderLastTickets();
+    if (state.lastTickets.length) writeTicketPrintWindow(printWin, state.lastTickets);
+    else printWin?.close();
   } catch (error) {
+    printWin?.close();
     if (error.network) {
       queuePendingSale({ ...payload, queued_at: new Date().toISOString() });
       state.cart.clear();
       renderCart();
-      toast('Sem conexão: venda salva como pendente. Os vales serão liberados após sincronizar.', 'warning');
+      toast('Sem conexão: venda salva como pendente. Os vales serão impressos após sincronizar.', 'warning');
     } else toast(errorMessage(error), 'danger');
   } finally {
     $('#checkout').textContent = 'Finalizar venda';
@@ -431,11 +427,11 @@ async function checkout() {
   }
 }
 
-function renderLastVouchers() {
-  const panel = $('#last-vouchers-panel');
-  if (!state.lastVouchers.length) return panel.hidden = true;
+function renderLastTickets() {
+  const panel = $('#last-tickets-panel');
+  if (!state.lastTickets.length) return panel.hidden = true;
   panel.hidden = false;
-  $('#last-vouchers').innerHTML = state.lastVouchers.map(v => `<div class="voucher-card"><span>DAEX</span><strong>VALE 1 ${esc(v.produto)}</strong><b>#${String(v.codigo).padStart(6,'0')}</b><small>USO ÚNICO</small><button class="btn tiny primary" data-action="print-last-voucher" data-token="${esc(v.token)}" data-code="${v.codigo}" data-product="${esc(v.produto)}">Imprimir</button></div>`).join('');
+  $('#last-tickets').innerHTML = state.lastTickets.map(t => `<div class="voucher-card"><span>DAEX</span><strong>VALE ${esc(String(t.produto || 'ITEM').toUpperCase())}</strong><b>${esc(t.numero || '')}</b><small>ENTREGUE NA BARRACA</small><button class="btn tiny primary" data-action="print-last-ticket" data-number="${esc(t.numero || '')}" data-product="${esc(t.produto)}">Imprimir</button></div>`).join('');
 }
 
 function pendingSales() {
@@ -448,97 +444,64 @@ function updatePendingCount() { const n = pendingSales().length; $('#pending-cou
 async function syncPendingSales() {
   const queue = pendingSales();
   if (!queue.length) return toast('Não há vendas pendentes.', 'warning');
+  const printWin = window.open('', '_blank', 'width=500,height=700');
   const remaining = [];
   let synced = 0;
-  let vouchers = [];
+  let tickets = [];
   for (const sale of queue) {
     try {
       const { queued_at, ...payload } = sale;
       const result = await api.rpc('daex_registrar_venda', payload);
       synced += 1;
-      vouchers.push(...(result?.vales || []));
+      tickets.push(...(result?.tickets || []));
     } catch (error) {
       remaining.push(sale);
       if (!error.network) toast(`Pendência não sincronizada: ${errorMessage(error)}`, 'danger');
     }
   }
   savePendingSales(remaining);
-  state.lastVouchers = vouchers;
+  state.lastTickets = tickets;
   await loadEventData();
-  renderLastVouchers();
+  renderLastTickets();
+  if (tickets.length) writeTicketPrintWindow(printWin, tickets); else printWin?.close();
   toast(`${synced} venda(s) sincronizada(s).${remaining.length ? ` ${remaining.length} ainda pendente(s).` : ''}`, remaining.length ? 'warning' : 'success');
 }
 
-function qrDataUrl(text) {
-  try {
-    if (typeof window.qrcode !== 'function') return '';
-    const qr = window.qrcode(0, 'M');
-    qr.addData(text);
-    qr.make();
-    return qr.createDataURL(5, 2);
-  } catch {
-    return '';
-  }
-}
-
-function voucherPrintDocument(vouchers) {
+function ticketPrintDocument(tickets) {
   const ev = selectedEvent();
-  const width = localStorage.getItem('daex-printer-width') || '58';
-  const cards = vouchers.map(v => {
-    const url = `https://cahk.app/daex/vale.html?t=${encodeURIComponent(v.token)}`;
-    const qr = qrDataUrl(url);
-    const qrHtml = qr ? `<img src="${qr}" alt="QR">` : `<div class="qr-fallback">QR indisponível<br>use o código abaixo</div>`;
-    return `<section class="ticket"><div class="logo">DAEX</div><h1>VALE 1 ${esc(v.produto || v.produto_nome)}</h1><div class="meta">${esc(ev?.nome || 'Evento DAEX')}<br>${fmtDate(ev?.data_evento)}</div><div class="code">#${String(v.codigo || v.id).padStart(6,'0')}</div>${qrHtml}<div class="token">${esc(v.token)}</div><strong>USO ÚNICO</strong></section>`;
-  }).join('');
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Vales DAEX</title><style>@page{size:${width}mm auto;margin:2mm}body{margin:0;font-family:Arial,sans-serif;color:#000}.ticket{width:${Number(width)-4}mm;box-sizing:border-box;text-align:center;padding:3mm 2mm;border-bottom:1px dashed #000;page-break-after:always}.logo{font-size:16px;font-weight:900;letter-spacing:2px}h1{font-size:18px;margin:3mm 0}.meta{font-size:10px}.code{font-size:20px;font-weight:900;margin:2mm 0}.ticket img{width:32mm;height:32mm;object-fit:contain}.qr-fallback{font-size:9px;border:1px dashed #000;padding:4mm 2mm;margin:2mm}.token{font-size:7px;word-break:break-all;margin:1mm 0 2mm}.ticket>strong{font-size:11px}</style></head><body>${cards}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`;
+  const width = Number(localStorage.getItem('daex-printer-width') || '58');
+  const printableWidth = Math.max(40, width - 4);
+  const cards = tickets.map(t => `
+    <section class="ticket">
+      <div class="logo">DAEX</div>
+      <div class="event">${esc(ev?.nome || 'Evento DAEX')}</div>
+      <h1>VALE ${esc(String(t.produto || 'ITEM').toUpperCase())}</h1>
+      <div class="date">${fmtDate(ev?.data_evento)}</div>
+      ${t.numero ? `<div class="serial">${esc(t.numero)}</div>` : ''}
+      <strong>ENTREGUE ESTE VALE NA BARRACA</strong>
+    </section>`).join('');
+
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Vales DAEX</title><style>
+    @page{size:${width}mm auto;margin:2mm}
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;color:#000;background:#fff}
+    .ticket{width:${printableWidth}mm;min-height:42mm;text-align:center;padding:4mm 2mm;border:2px solid #000;border-radius:2mm;margin:0 0 2mm;page-break-after:always;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .logo{font-size:16px;font-weight:900;letter-spacing:2px}.event{font-size:9px;margin-top:1mm}
+    h1{font-size:${width <= 58 ? 24 : 30}px;line-height:1.05;margin:4mm 0;font-weight:900;text-transform:uppercase}
+    .date{font-size:10px}.serial{font-size:9px;margin:2mm 0}.ticket>strong{font-size:10px;margin-top:2mm;border-top:1px dashed #000;padding-top:2mm;width:100%}
+  </style></head><body>${cards}<script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`;
 }
-function printVouchers(vouchers) {
+
+function writeTicketPrintWindow(win, tickets) {
+  if (!tickets?.length) { win?.close(); return; }
+  if (!win) return toast('Permita pop-ups para imprimir os vales. Você pode usar “Imprimir novamente”.', 'warning');
+  win.document.open();
+  win.document.write(ticketPrintDocument(tickets));
+  win.document.close();
+}
+
+function printTickets(tickets) {
   const win = window.open('', '_blank', 'width=500,height=700');
-  if (!win) return toast('Permita pop-ups para imprimir.', 'warning');
-  win.document.open(); win.document.write(voucherPrintDocument(vouchers)); win.document.close();
-}
-
-async function validateVoucher(raw) {
-  const token = normalizeVoucherToken(raw);
-  if (!token) return toast('Informe um token válido.', 'warning');
-  try {
-    const result = await api.rpc('daex_validar_vale', { p_token: token });
-    $('#voucher-result').innerHTML = `<div class="validation success"><strong>VALE VÁLIDO E CONSUMIDO</strong><span>#${String(result.codigo).padStart(6,'0')} • ${esc(result.produto)}</span></div>`;
-    $('#voucher-token').value = '';
-    toast('Vale validado.');
-    await loadEventData();
-  } catch (error) {
-    $('#voucher-result').innerHTML = `<div class="validation danger"><strong>NÃO VALIDADO</strong><span>${esc(errorMessage(error))}</span></div>`;
-  }
-}
-
-async function startScanner() {
-  if (!('BarcodeDetector' in window)) return toast('Leitura por câmera não é suportada neste navegador. Use o token ou a URL.', 'warning');
-  try {
-    const detector = new BarcodeDetector({ formats: ['qr_code'] });
-    state.scannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    const video = $('#scanner-video');
-    video.srcObject = state.scannerStream; video.hidden = false; await video.play();
-    const scan = async () => {
-      if (!state.scannerStream) return;
-      try {
-        const codes = await detector.detect(video);
-        if (codes[0]?.rawValue) {
-          $('#voucher-token').value = codes[0].rawValue;
-          stopScanner();
-          toast('QR lido. Confira e valide.');
-          return;
-        }
-      } catch {}
-      requestAnimationFrame(scan);
-    };
-    scan();
-  } catch { toast('Não foi possível acessar a câmera.', 'danger'); }
-}
-function stopScanner() {
-  state.scannerStream?.getTracks().forEach(t => t.stop());
-  state.scannerStream = null;
-  $('#scanner-video').hidden = true;
+  writeTicketPrintWindow(win, tickets);
 }
 
 function exportCSV() {
@@ -565,15 +528,13 @@ function bindEvents() {
   $('#nav').addEventListener('click', e => { const btn = e.target.closest('[data-route]'); if (btn) goRoute(btn.dataset.route); });
   window.addEventListener('hashchange', () => goRoute((location.hash || '#overview').slice(1)));
   $('#event-select').addEventListener('change', async e => { state.selectedEventId = e.target.value; localStorage.setItem('daex-selected-event', state.selectedEventId); state.cart.clear(); await loadEventData(); });
-  $('#logout').addEventListener('click', () => { stopScanner(); signOut(); location.replace('./'); });
+  $('#logout').addEventListener('click', () => { signOut(); location.replace('./'); });
   $('#printer-width').addEventListener('change', e => localStorage.setItem('daex-printer-width', e.target.value));
   $('#sync-pending').addEventListener('click', syncPendingSales);
   $('#product-search').addEventListener('input', renderPDV);
-  $('#voucher-search').addEventListener('input', renderVouchers);
   $('#checkout').addEventListener('click', checkout);
   $('#clear-cart').addEventListener('click', () => { state.cart.clear(); renderCart(); });
-  $('#print-all-vouchers').addEventListener('click', () => printVouchers(state.lastVouchers));
-  $('#scan-qr').addEventListener('click', startScanner);
+  $('#print-all-tickets').addEventListener('click', () => printTickets(state.lastTickets));
   $('#export-csv').addEventListener('click', exportCSV);
   $('#print-report').addEventListener('click', () => window.print());
 
@@ -612,7 +573,7 @@ function bindEvents() {
   $('#product-form').addEventListener('submit', async e => {
     e.preventDefault(); if (!eventRequired()) return; const form = e.currentTarget; const fd = new FormData(form); const initial = Number(fd.get('estoque_inicial') || 0); setBusy(form, true);
     try {
-      const rows = await api.insert('daex_produtos', { evento_id: state.selectedEventId, nome: fd.get('nome'), categoria: fd.get('categoria') || null, preco_venda: Number(fd.get('preco_venda')), preco_custo: Number(fd.get('preco_custo') || 0), emitir_vale: fd.get('emitir_vale') === 'on', estoque_atual: 0 });
+      const rows = await api.insert('daex_produtos', { evento_id: state.selectedEventId, nome: fd.get('nome'), nome_vale: fd.get('nome_vale')?.trim() || null, categoria: fd.get('categoria') || null, preco_venda: Number(fd.get('preco_venda')), preco_custo: Number(fd.get('preco_custo') || 0), emitir_vale: fd.get('emitir_vale') === 'on', estoque_atual: 0 });
       if (initial > 0) await api.rpc('daex_ajustar_estoque', { p_produto_id: rows[0].id, p_delta: initial, p_motivo: 'Estoque inicial', p_custo_unitario: Number(fd.get('preco_custo') || 0), p_fornecedor: null });
       form.reset(); toast('Produto cadastrado.'); await loadEventData();
     } catch (err) { toast(errorMessage(err), 'danger'); } finally { setBusy(form, false); }
@@ -623,8 +584,6 @@ function bindEvents() {
     try { await api.rpc('daex_ajustar_estoque', { p_produto_id: d.produto_id, p_delta: Number(d.delta), p_motivo: d.motivo, p_custo_unitario: d.custo_unitario ? Number(d.custo_unitario) : null, p_fornecedor: d.fornecedor || null }); form.reset(); toast('Estoque atualizado.'); await loadEventData(); }
     catch (err) { toast(errorMessage(err), 'danger'); } finally { setBusy(form, false); }
   });
-
-  $('#voucher-form').addEventListener('submit', async e => { e.preventDefault(); await validateVoucher($('#voucher-token').value); });
 
   $('#expense-form').addEventListener('submit', async e => {
     e.preventDefault(); if (!eventRequired()) return; const form = e.currentTarget; const d = formObject(form); setBusy(form, true);
@@ -663,8 +622,7 @@ async function handleActionClick(event) {
     }
     if (action === 'cancel-sale') { const reason = prompt('Motivo do cancelamento:'); if (!reason) return; await api.rpc('daex_cancelar_venda', { p_venda_id: Number(id), p_motivo: reason }); toast('Venda cancelada e estoque devolvido.'); await loadEventData(); return; }
     if (action === 'cancel-expense') { if (!confirm('Cancelar esta despesa?')) return; await api.update('daex_despesas', { id: `eq.${id}` }, { status: 'cancelada' }); toast('Despesa cancelada.'); await loadEventData(); return; }
-    if (action === 'print-voucher') { const v = state.vouchers.find(x => String(x.id) === String(id)); if (v) printVouchers([{ codigo: v.id, token: v.token, produto: v.produto_nome }]); return; }
-    if (action === 'print-last-voucher') { printVouchers([{ codigo: button.dataset.code, token: button.dataset.token, produto: button.dataset.product }]); return; }
+    if (action === 'print-last-ticket') { printTickets([{ numero: button.dataset.number, produto: button.dataset.product }]); return; }
   } catch (err) { toast(errorMessage(err), 'danger'); }
 }
 

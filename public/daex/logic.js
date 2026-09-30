@@ -121,3 +121,20 @@ export function csvEscape(value) {
   if (/[",\n]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
   return s;
 }
+
+export function expandPhysicalTickets(saleId, items = []) {
+  const tickets = [];
+  let sequence = 0;
+  for (const item of items) {
+    const quantity = Math.max(0, Number(item.quantity || 0));
+    const label = String(item.ticketName || item.name || item.produto || 'ITEM').trim().toUpperCase();
+    for (let i = 0; i < quantity; i += 1) {
+      sequence += 1;
+      tickets.push({
+        numero: `${saleId}-${String(sequence).padStart(2, '0')}`,
+        produto: label,
+      });
+    }
+  }
+  return tickets;
+}

@@ -17,7 +17,6 @@
       <button data-route="entities" class="nav-item">Entidades & Aportes</button>
       <button data-route="stock" class="nav-item">Produtos & Estoque</button>
       <button data-route="pdv" class="nav-item">PDV</button>
-      <button data-route="vouchers" class="nav-item">Vales</button>
       <button data-route="finance" class="nav-item">Financeiro</button>
       <button data-route="reports" class="nav-item">Relatórios</button>
     </nav>
@@ -111,14 +110,15 @@
     <section id="route-stock" class="route">
       <div class="two-col align-start">
         <article class="panel">
-          <div class="panel-head"><div><h2>Novo produto</h2><p>Preço, custo e emissão de vale.</p></div></div>
+          <div class="panel-head"><div><h2>Novo produto</h2><p>Preço, custo e vale físico impresso na venda.</p></div></div>
           <form id="product-form" class="form-grid">
             <label class="span-2">Produto<input name="nome" required placeholder="Ex.: Chopp 400 ml" /></label>
+            <label class="span-2">Nome no vale <input name="nome_vale" placeholder="Ex.: CHOPP, DOSE, ENERGÉTICO (opcional)" /></label>
             <label>Categoria<input name="categoria" placeholder="Bebida" /></label>
             <label>Preço venda<input name="preco_venda" type="number" min="0" step="0.01" required /></label>
             <label>Custo unitário<input name="preco_custo" type="number" min="0" step="0.01" value="0" /></label>
             <label>Estoque inicial<input name="estoque_inicial" type="number" min="0" step="1" value="0" /></label>
-            <label class="check span-2"><input name="emitir_vale" type="checkbox" checked /> Emitir um vale individual por unidade vendida</label>
+            <label class="check span-2"><input name="emitir_vale" type="checkbox" checked /> Imprimir um vale individual por unidade vendida</label>
             <button class="btn primary span-2" type="submit">Cadastrar produto</button>
           </form>
         </article>
@@ -154,26 +154,7 @@
           <button id="clear-cart" class="btn subtle full">Limpar carrinho</button>
         </aside>
       </div>
-      <article id="last-vouchers-panel" class="panel top-gap" hidden><div class="panel-head"><div><h2>Vales desta venda</h2><p>Um vale por unidade.</p></div><button id="print-all-vouchers" class="btn subtle">Imprimir todos</button></div><div id="last-vouchers" class="voucher-grid"></div></article>
-    </section>
-
-    <section id="route-vouchers" class="route">
-      <div class="two-col align-start">
-        <article class="panel">
-          <div class="panel-head"><div><h2>Validar vale</h2><p>Digite, cole ou escaneie o token do QR.</p></div></div>
-          <form id="voucher-form" class="stack">
-            <label>Token / URL<input id="voucher-token" name="token" placeholder="DAEX:... ou URL do vale" required /></label>
-            <button class="btn primary" type="submit">Validar e consumir</button>
-            <button id="scan-qr" class="btn subtle" type="button">Escanear com câmera</button>
-          </form>
-          <video id="scanner-video" class="scanner" playsinline hidden></video>
-          <div id="voucher-result" class="top-gap"></div>
-        </article>
-        <article class="panel">
-          <div class="panel-head"><div><h2>Vales emitidos</h2><p>Status em tempo real.</p></div><input id="voucher-search" class="search" placeholder="Produto ou código" /></div>
-          <div id="vouchers-table" class="table-wrap"></div>
-        </article>
-      </div>
+      <article id="last-tickets-panel" class="panel top-gap" hidden><div class="panel-head"><div><h2>Vales para entregar</h2><p>Um papel por unidade comprada.</p></div><button id="print-all-tickets" class="btn subtle">Imprimir novamente</button></div><div id="last-tickets" class="voucher-grid"></div></article>
     </section>
 
     <section id="route-finance" class="route">
@@ -208,7 +189,6 @@
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@2.0.4/dist/qrcode.js"></script>
   <script type="module" src="./dashboard.js"></script>
 </body>
 </html>
