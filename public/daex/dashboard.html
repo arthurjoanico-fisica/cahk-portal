@@ -3,41 +3,212 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0b1220" />
+  <meta name="theme-color" content="#07101f" />
   <title>DAEX • Caixa</title>
   <link rel="stylesheet" href="./styles.css" />
-  <style>
-    .dashboard{width:min(100%,980px);padding:28px;border-radius:24px;border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.94)}
-    .top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:26px}
-    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-    .module{display:block;text-decoration:none;color:#f8fafc;border:1px solid #334155;background:#0b1220;border-radius:16px;padding:18px}
-    .module strong{display:block;margin-bottom:6px}.module span{color:#94a3b8;font-size:13px}
-    .secondary{background:#1e293b}
-    @media(max-width:720px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
-  </style>
 </head>
-<body>
-  <main class="shell">
-    <section class="dashboard">
-      <div class="top">
-        <div>
-          <p class="eyebrow">Sessão DAEX</p>
-          <h1>Caixa DAEX</h1>
-          <p class="muted" style="margin-bottom:0">Módulo conectado ao cahk.app.</p>
-        </div>
-        <button id="logout" class="secondary">Sair</button>
-      </div>
+<body class="app-page">
+  <div id="toast" class="toast" hidden></div>
+  <aside class="sidebar">
+    <div class="brand side-brand"><div class="brand-mark">Σ</div><div><strong>DAEX</strong><span>Caixa de Eventos</span></div></div>
+    <nav id="nav">
+      <button data-route="overview" class="nav-item active">Visão geral</button>
+      <button data-route="events" class="nav-item">Eventos</button>
+      <button data-route="entities" class="nav-item">Entidades & Aportes</button>
+      <button data-route="stock" class="nav-item">Produtos & Estoque</button>
+      <button data-route="pdv" class="nav-item">PDV</button>
+      <button data-route="vouchers" class="nav-item">Vales</button>
+      <button data-route="finance" class="nav-item">Financeiro</button>
+      <button data-route="reports" class="nav-item">Relatórios</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <label class="compact-label">Impressora
+        <select id="printer-width"><option value="58">58 mm</option><option value="80">80 mm</option></select>
+      </label>
+      <button id="sync-pending" class="btn subtle full">Sincronizar pendências <span id="pending-count">0</span></button>
+      <button id="logout" class="btn subtle full">Sair</button>
+    </div>
+  </aside>
 
-      <div class="grid">
-        <a class="module" href="#"><strong>Eventos</strong><span>Criação e fechamento dos eventos.</span></a>
-        <a class="module" href="#"><strong>PDV</strong><span>Vendas, pagamentos e emissão de vales.</span></a>
-        <a class="module" href="#"><strong>Vales</strong><span>Consulta e validação de uso único.</span></a>
-        <a class="module" href="#"><strong>Estoque</strong><span>Entradas, saídas e saldo por produto.</span></a>
-        <a class="module" href="#"><strong>Financeiro</strong><span>Aportes, despesas e resultado do evento.</span></a>
-        <a class="module" href="#"><strong>Relatórios</strong><span>Fechamento, rateio e exportações.</span></a>
+  <main class="app-main">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Sessão DAEX</p>
+        <h1 id="page-title">Visão geral</h1>
+      </div>
+      <div class="top-actions">
+        <div class="event-picker">
+          <span>Evento ativo</span>
+          <select id="event-select"></select>
+        </div>
+        <div class="user-pill"><span id="user-name">—</span><small id="user-role">—</small></div>
+      </div>
+    </header>
+
+    <section id="route-overview" class="route active">
+      <div class="metric-grid" id="overview-metrics"></div>
+      <div class="two-col">
+        <article class="panel"><div class="panel-head"><div><h2>Evento selecionado</h2><p>Status, caixa e movimentação.</p></div></div><div id="event-summary" class="empty-state">Crie ou selecione um evento.</div></article>
+        <article class="panel"><div class="panel-head"><div><h2>Últimas vendas</h2><p>Movimentações mais recentes.</p></div></div><div id="recent-sales" class="table-wrap"></div></article>
+      </div>
+    </section>
+
+    <section id="route-events" class="route">
+      <div class="two-col align-start">
+        <article class="panel">
+          <div class="panel-head"><div><h2>Novo evento</h2><p>Cada festa funciona como um projeto financeiro independente.</p></div></div>
+          <form id="event-form" class="form-grid">
+            <label class="span-2">Nome<input name="nome" required placeholder="Ex.: Festa DAEX 2026" /></label>
+            <label>Data<input name="data_evento" type="date" required /></label>
+            <label>Local<input name="local" placeholder="Local do evento" /></label>
+            <label>Fundo de troco<input name="fundo_troco" type="number" min="0" step="0.01" value="0" /></label>
+            <label>Rateio<select name="regra_rateio"><option value="proporcional">Proporcional ao aporte</option><option value="igual">Igual entre participantes</option><option value="personalizado">Percentual personalizado</option><option value="nenhum">Sem rateio</option></select></label>
+            <label class="span-2">Descrição<textarea name="descricao" rows="3" placeholder="Observações"></textarea></label>
+            <button class="btn primary span-2" type="submit">Criar evento</button>
+          </form>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h2>Eventos</h2><p>Abra, feche e altere o evento em uso.</p></div></div>
+          <div id="events-list"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="route-entities" class="route">
+      <div class="three-col align-start">
+        <article class="panel">
+          <div class="panel-head"><div><h2>Entidade</h2><p>Cadastre CA, DA ou atlética.</p></div></div>
+          <form id="entity-form" class="stack">
+            <label>Sigla<input name="sigla" required placeholder="Ex.: CAHK" /></label>
+            <label>Nome<input name="nome" required placeholder="Nome completo" /></label>
+            <label>Tipo<select name="tipo"><option value="centro_academico">Centro Acadêmico</option><option value="atletica">Atlética</option><option value="outro">Outro</option></select></label>
+            <button class="btn primary" type="submit">Cadastrar entidade</button>
+          </form>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h2>Participantes do evento</h2><p>Vincule as entidades que participam do rateio.</p></div></div>
+          <form id="participant-form" class="stack">
+            <label>Entidade<select name="entidade_id" id="participant-entity"></select></label>
+            <label>Percentual personalizado<input name="percentual_rateio" type="number" min="0" max="100" step="0.01" placeholder="Opcional" /></label>
+            <button class="btn primary" type="submit">Adicionar ao evento</button>
+          </form>
+          <div id="participants-list" class="mini-list"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h2>Novo aporte</h2><p>Registre quanto cada entidade colocou.</p></div></div>
+          <form id="contribution-form" class="stack">
+            <label>Entidade<select name="entidade_id" id="contribution-entity"></select></label>
+            <label>Valor<input name="valor" type="number" min="0.01" step="0.01" required /></label>
+            <label>Forma<select name="forma_pagamento"><option>Pix</option><option>Dinheiro</option><option>Transferência</option><option>Cartão</option><option>Outro</option></select></label>
+            <label>Observação<input name="observacao" /></label>
+            <button class="btn primary" type="submit">Registrar aporte</button>
+          </form>
+        </article>
+      </div>
+      <article class="panel top-gap"><div class="panel-head"><div><h2>Aportes registrados</h2></div></div><div id="contributions-table" class="table-wrap"></div></article>
+    </section>
+
+    <section id="route-stock" class="route">
+      <div class="two-col align-start">
+        <article class="panel">
+          <div class="panel-head"><div><h2>Novo produto</h2><p>Preço, custo e emissão de vale.</p></div></div>
+          <form id="product-form" class="form-grid">
+            <label class="span-2">Produto<input name="nome" required placeholder="Ex.: Chopp 400 ml" /></label>
+            <label>Categoria<input name="categoria" placeholder="Bebida" /></label>
+            <label>Preço venda<input name="preco_venda" type="number" min="0" step="0.01" required /></label>
+            <label>Custo unitário<input name="preco_custo" type="number" min="0" step="0.01" value="0" /></label>
+            <label>Estoque inicial<input name="estoque_inicial" type="number" min="0" step="1" value="0" /></label>
+            <label class="check span-2"><input name="emitir_vale" type="checkbox" checked /> Emitir um vale individual por unidade vendida</label>
+            <button class="btn primary span-2" type="submit">Cadastrar produto</button>
+          </form>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h2>Ajuste de estoque</h2><p>Entrada, correção, perda ou devolução.</p></div></div>
+          <form id="stock-form" class="stack">
+            <label>Produto<select name="produto_id" id="stock-product"></select></label>
+            <label>Quantidade (+ entrada / - saída)<input name="delta" type="number" step="1" required /></label>
+            <label>Custo unitário<input name="custo_unitario" type="number" min="0" step="0.01" /></label>
+            <label>Fornecedor<input name="fornecedor" /></label>
+            <label>Motivo<input name="motivo" required placeholder="Ex.: Compra inicial" /></label>
+            <button class="btn primary" type="submit">Aplicar ajuste</button>
+          </form>
+        </article>
+      </div>
+      <article class="panel top-gap"><div class="panel-head"><div><h2>Estoque atual</h2></div></div><div id="products-table" class="table-wrap"></div></article>
+      <article class="panel top-gap"><div class="panel-head"><div><h2>Movimentações de estoque</h2><p>Entradas, vendas, ajustes e cancelamentos.</p></div></div><div id="stock-movements-table" class="table-wrap"></div></article>
+    </section>
+
+    <section id="route-pdv" class="route">
+      <div class="pdv-layout">
+        <article class="panel pdv-products">
+          <div class="panel-head"><div><h2>Produtos</h2><p>Clique para adicionar ao carrinho.</p></div><input id="product-search" class="search" placeholder="Buscar produto" /></div>
+          <div id="product-grid" class="product-grid"></div>
+        </article>
+        <aside class="panel cart-panel">
+          <div class="panel-head"><div><h2>Carrinho</h2><p id="cart-caption">0 itens</p></div></div>
+          <div id="cart-list" class="cart-list"></div>
+          <div class="cart-total"><span>Total</span><strong id="cart-total">R$ 0,00</strong></div>
+          <label>Pagamento<select id="payment-method"><option>Pix</option><option>Dinheiro</option><option>Cartão</option></select></label>
+          <div id="register-box" class="register-box"></div>
+          <button id="checkout" class="btn primary full">Finalizar venda</button>
+          <button id="clear-cart" class="btn subtle full">Limpar carrinho</button>
+        </aside>
+      </div>
+      <article id="last-vouchers-panel" class="panel top-gap" hidden><div class="panel-head"><div><h2>Vales desta venda</h2><p>Um vale por unidade.</p></div><button id="print-all-vouchers" class="btn subtle">Imprimir todos</button></div><div id="last-vouchers" class="voucher-grid"></div></article>
+    </section>
+
+    <section id="route-vouchers" class="route">
+      <div class="two-col align-start">
+        <article class="panel">
+          <div class="panel-head"><div><h2>Validar vale</h2><p>Digite, cole ou escaneie o token do QR.</p></div></div>
+          <form id="voucher-form" class="stack">
+            <label>Token / URL<input id="voucher-token" name="token" placeholder="DAEX:... ou URL do vale" required /></label>
+            <button class="btn primary" type="submit">Validar e consumir</button>
+            <button id="scan-qr" class="btn subtle" type="button">Escanear com câmera</button>
+          </form>
+          <video id="scanner-video" class="scanner" playsinline hidden></video>
+          <div id="voucher-result" class="top-gap"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h2>Vales emitidos</h2><p>Status em tempo real.</p></div><input id="voucher-search" class="search" placeholder="Produto ou código" /></div>
+          <div id="vouchers-table" class="table-wrap"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="route-finance" class="route">
+      <div class="two-col align-start">
+        <article class="panel">
+          <div class="panel-head"><div><h2>Nova despesa</h2><p>Gastos operacionais. Compras de bebidas/produtos entram pela aba Estoque.</p></div></div>
+          <form id="expense-form" class="form-grid">
+            <label>Categoria<input name="categoria" required placeholder="Bebidas, estrutura..." /></label>
+            <label>Valor<input name="valor" type="number" min="0.01" step="0.01" required /></label>
+            <label class="span-2">Descrição<input name="descricao" required /></label>
+            <label>Fornecedor<input name="fornecedor" /></label>
+            <label>Forma<select name="forma_pagamento"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Transferência</option><option>Outro</option></select></label>
+            <label class="span-2">Observação<input name="observacao" /></label>
+            <button class="btn primary span-2" type="submit">Registrar despesa</button>
+          </form>
+        </article>
+        <article class="panel"><div class="panel-head"><div><h2>Resumo financeiro</h2></div></div><div id="finance-summary" class="metric-grid compact"></div></article>
+      </div>
+      <article class="panel top-gap"><div class="panel-head"><div><h2>Despesas</h2></div></div><div id="expenses-table" class="table-wrap"></div></article>
+    </section>
+
+    <section id="route-reports" class="route">
+      <div id="report-area" class="report-area">
+        <div class="panel-head"><div><h2>Fechamento do evento</h2><p id="report-event-name">Selecione um evento.</p></div><div class="inline-actions"><button id="export-csv" class="btn subtle">Exportar CSV</button><button id="print-report" class="btn primary">Imprimir / PDF</button></div></div>
+        <div id="report-metrics" class="metric-grid"></div>
+        <div class="two-col top-gap">
+          <article class="panel inner"><h3>Vendas por pagamento</h3><div id="payment-breakdown"></div></article>
+          <article class="panel inner"><h3>Rateio do resultado</h3><div id="distribution-table"></div></article>
+        </div>
+        <article class="panel inner top-gap"><h3>Produtos vendidos</h3><div id="sales-items-report" class="table-wrap"></div></article>
       </div>
     </section>
   </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@2.0.4/dist/qrcode.js"></script>
   <script type="module" src="./dashboard.js"></script>
 </body>
 </html>

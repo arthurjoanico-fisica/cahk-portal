@@ -7,40 +7,22 @@
   <title>DAEX • Login</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
-<body>
-  <main class="shell">
-    <section class="card">
-      <div class="brand">
-        <div class="mark">Σ</div>
-        <div>
-          <strong>DAEX</strong>
-          <span>Diretório Acadêmico de Exatas</span>
-        </div>
-      </div>
-
+<body class="login-page">
+  <main class="login-shell">
+    <section class="login-card">
+      <div class="brand"><div class="brand-mark">Σ</div><div><strong>DAEX</strong><span>Diretório Acadêmico de Exatas</span></div></div>
       <p class="eyebrow">Módulo interno</p>
       <h1>Entrar no DAEX</h1>
-      <p class="muted">Acesso separado da Gestão CAHK.</p>
-
-      <form id="login-form">
-        <label>
-          Usuário
-          <input id="username" autocomplete="username" placeholder="caixadaex" required />
-        </label>
-
-        <label>
-          Senha
-          <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
-        </label>
-
-        <p id="error" class="error" hidden></p>
-        <button id="submit" type="submit">Entrar</button>
+      <p class="muted">Acesso independente da Gestão CAHK.</p>
+      <form id="login-form" class="stack">
+        <label>Usuário<input id="username" autocomplete="username" placeholder="caixadaex" required /></label>
+        <label>Senha<input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required /></label>
+        <p id="error" class="alert danger" hidden></p>
+        <button id="submit" class="btn primary" type="submit">Entrar</button>
       </form>
-
-      <p class="foot">cahk.app/daex</p>
+      <p class="footnote">cahk.app/daex</p>
     </section>
   </main>
-
   <script type="module" src="./app.js"></script>
 </body>
 </html>
