@@ -1,1 +1,1 @@
-CAHK Portal build 6.1.2-avisos-com-imagem
+CAHK Portal build 6.1.3-noticias-route-fix
