@@ -26,3 +26,20 @@ async function managementPage({snapshot=true,failRefresh=false}={}){
 test('management loads when authentication completed before complaints script registered',async()=>{const {p}=await managementPage();await p.locator('#complaintNav').click();await p.locator('.complaint-row').waitFor({timeout:3000});assert.match(await p.locator('.complaint-row').textContent(),/CAHK-21/);await p.close();});
 test('saving locks editor and keeps usable state when post-save refresh fails',async()=>{const {p,release}=await managementPage({snapshot:false,failRefresh:true});await p.locator('#complaintNav').click();await p.locator('.complaint-row').click();await p.locator('#complaintDetail').waitFor({state:'visible'});assert.equal(await p.locator('#complaintText img').count(),0);await p.locator('#complaintNotes').fill('Registro de providências.');await p.locator('#complaintSave').click();await p.locator('#complaintMessage').filter({hasText:'Salvando'}).waitFor();assert.equal(await p.locator('#complaintNotes').isDisabled(),true);assert.equal(await p.locator('#complaintStatus').isDisabled(),true);release();await p.locator('#complaintMessage').filter({hasText:'recarregar'}).waitFor({timeout:5000});assert.equal(await p.locator('#complaintNotes').inputValue(),'Registro de providências.');assert.equal(await p.locator('#complaintSave').isEnabled(),true);await p.screenshot({path:path.resolve(__dirname,'../docs/management.png'),fullPage:true});await p.close();});
 test('management report and privacy notice stay readable in the light theme',async()=>{const {p}=await managementPage();await p.locator('#complaintNav').click();await p.locator('.complaint-row').click();await p.locator('#complaintDetail').waitFor({state:'visible'});const values=await p.evaluate(()=>{const selectors=['.complaint-notice','.complaint-text','.complaint-row strong','#complaintForm label'];return selectors.map(s=>{const e=document.querySelector(s),c=getComputedStyle(e);return {s,color:c.color,bg:c.backgroundColor};});});const text=values.find(v=>v.s==='.complaint-text');assert.notEqual(text.bg,'rgb(14, 17, 22)');assert.notEqual(values.find(v=>v.s==='.complaint-row strong').color,'rgb(245, 247, 250)');await p.close();});
+test('panel and campus share the daily RU cache through real navigation',async()=>{
+ const p=await browser.newPage();let campus=0;
+ await p.clock.install({time:new Date('2026-10-05T18:00:00Z')});
+ await p.route('https://*.supabase.co/**',r=>{
+  const url=r.request().url();let data=[];
+  if(url.includes('campus-info')){campus++;const body=r.request().postDataJSON();data={ru:{date:body.date,menu:{almoco:'Arroz de teste'}},intercampi:{weekdays:[],saturday:[]}};}
+  else if(url.includes('weather-info'))data={current:{temperature:20},day:{},hourly:[]};
+  else if(url.includes('portal-public'))data={notices:[],events:[]};
+  return r.fulfill({contentType:'application/json',body:JSON.stringify(data)});
+ });
+ await p.goto(base+'/painel/');await p.locator('#meals').filter({hasText:'Arroz de teste'}).waitFor();
+ await p.reload();await p.locator('#meals').filter({hasText:'Arroz de teste'}).waitFor();assert.equal(campus,1);
+ await p.goto(base+'/vida-campus/');await p.locator('#ruMenu').filter({hasText:'Arroz de teste'}).waitFor();assert.equal(campus,1);
+ await p.clock.setSystemTime(new Date('2026-10-06T18:00:00Z'));
+ await p.clock.runFor(60000);await p.waitForFunction(()=>document.querySelector('#ruDate').textContent.includes('06'));assert.equal(campus,2);
+ await p.goto(base+'/painel/');await p.locator('#meals').filter({hasText:'Arroz de teste'}).waitFor();assert.equal(campus,2);await p.close();
+});

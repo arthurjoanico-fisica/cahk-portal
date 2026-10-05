@@ -1,5 +1,5 @@
-const CACHE='cahk-v614-denuncias-privadas';
-const CORE=['/','/portal-v5.css?v=6.1.2','/portal-v5.js?v=6.1.2','/assets/cahk-logo-v32.png','/assets/favicon-192.png','/biblioteca/','/grade/','/disciplina/','/minha-fisica/','/projetos/','/vida-campus/','/agenda/','/noticias/','/transparencia/','/instalar/','/painel/','/qrcode/','/pwa.js?v=6.1.4'];
+const CACHE='cahk-v615-economia';
+const CORE=['/public-cache.js?v=6.1.5','/','/portal-v5.css?v=6.1.2','/portal-v5.js?v=6.1.2','/assets/cahk-logo-v32.png','/assets/favicon-192.png','/biblioteca/','/grade/','/disciplina/','/minha-fisica/','/projetos/','/vida-campus/','/agenda/','/noticias/','/transparencia/','/instalar/','/painel/','/qrcode/','/pwa.js?v=6.1.4'];
 
 self.addEventListener('install',e=>{
   self.skipWaiting();

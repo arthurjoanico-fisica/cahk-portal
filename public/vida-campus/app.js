@@ -4,19 +4,17 @@ KEY='sb_publishable_jeWoJ4G9UXN6ucS3WkZVzA_ytTEzuJz',
 $=s=>document.querySelector(s),
 esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-const localDate=()=>{
-  const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-};
+const localDate=()=>window.CAHKPublicCache.day();
 
 let ruDays={today:null,tomorrow:null};
 let activeRuDay='today';
 
-async function callCampus(){
+async function callCampusRequest(){
   const body={date:localDate()};
   const headers={'Content-Type':'application/json','apikey':KEY};
   let r=await fetch(`${URL}/functions/v1/campus-info`,{method:'POST',headers,body:JSON.stringify(body)});
-  if(r.ok)return r.json();
+  if(r.ok){const d=await r.json();if(d.error)throw Object.assign(new Error(d.error),{status:r.status});return d;}
+  if(r.status===402||r.status===429||r.status>=500)throw Object.assign(new Error('RU temporariamente indisponível.'),{status:r.status});
 
   // Fallback temporário para a função antiga.
   r=await fetch(`${URL}/functions/v1/portal-public`,{
@@ -24,9 +22,11 @@ async function callCampus(){
     body:JSON.stringify({action:'campus',date:body.date})
   });
   const d=await r.json();
-  if(!r.ok||d.error)throw new Error(d.error||'Erro');
+  if(!r.ok||d.error)throw Object.assign(new Error(d.error||'Erro'),{status:r.status});
   return d;
 }
+
+const callCampus=()=>window.CAHKPublicCache.get('campus:'+localDate(),86400000,callCampusRequest);
 
 async function load(){
   try{
@@ -121,5 +121,9 @@ function renderBus(bus){
     :'<div class="campus-empty">Sem linhas regulares listadas para hoje. Consulte a fonte oficial.</div>';
 }
 
+let lastDay=localDate();
+function checkDay(){const day=localDate();if(day!==lastDay){lastDay=day;load();}}
+setInterval(checkDay,60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkDay();});
 load();
 })();
