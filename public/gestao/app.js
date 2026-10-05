@@ -85,6 +85,7 @@
     profile=data;$('#userName').textContent=profile.nome||session.user.email;$('#userRole').textContent=roleLabels[profile.role]||profile.role;
     $$('[data-perm]').forEach(x=>x.classList.toggle('hidden',!can(x.dataset.perm)));
     $$('[data-admin="1"]').forEach(x=>x.classList.toggle('hidden',profile.role!=='admin'));
+    window.CAHK_MANAGEMENT_PROFILE = {...profile,email:session.user.email};
     window.dispatchEvent(new CustomEvent('cahk-profile-ready',{detail:{...profile,email:session.user.email}}));
     showApp();
     await Promise.all([loadConfig(),loadProducts(),loadSellers(),loadClients(),loadCash()]);
@@ -102,7 +103,7 @@
   async function loadClients(){const {data,error}=await sb.from('clientes').select('*').order('nome');if(error)throw error;clients=data||[];$('#saleClient').innerHTML='<option value="">Selecione…</option>'+clients.filter(x=>x.ativo).map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('');renderClientList()}
   async function loadCash(){const {data,error}=await sb.from('caixas').select('*').eq('status','aberto').order('aberto_em',{ascending:false}).limit(1);if(error)throw error;openCash=data?.[0]||null;renderCash()}
 
-  const titles={dashboard:'Visão geral',pdv:'Balcão / PDV',caixa:'Caixa',entrada:'Entrada de estoque',inventario:'Inventário físico',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',mltn:'MLTN / POD',avisos:'Avisos do Portal',biblioteca:'Biblioteca Virtual',academico:'Acadêmico / Disciplinas',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',transparencia:'Transparência',usuarios:'Usuários e permissões',auditoria:'Registro de alterações',backup:'Backup / Exportação',config:'Configurações'};
+  const titles={dashboard:'Visão geral',pdv:'Balcão / PDV',caixa:'Caixa',entrada:'Entrada de estoque',inventario:'Inventário físico',vendas:'Vendas',fiado:'Fiado',encomendas:'Encomendas',mltn:'MLTN / POD',avisos:'Avisos e Destaques',denuncias:'Denúncias',biblioteca:'Biblioteca Virtual',academico:'Acadêmico / Disciplinas',produtos:'Produtos / Loja',vendedores:'Vendedores',clientes:'Clientes',relatorios:'Relatórios',transparencia:'Transparência',usuarios:'Usuários e permissões',auditoria:'Registro de alterações',backup:'Backup / Exportação',config:'Configurações'};
   function switchView(v){
     $$('.view').forEach(x=>x.classList.add('hidden'));$(`#view-${v}`).classList.remove('hidden');
     $$('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('#pageTitle').textContent=titles[v]||v;

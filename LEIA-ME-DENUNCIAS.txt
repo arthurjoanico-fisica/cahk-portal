@@ -1,0 +1,50 @@
+CAHK PORTAL v6.1.4 — DENÚNCIAS
+
+O QUE JÁ ESTÁ PRONTO
+O recebimento foi ativado no Supabase existente do CAHK.
+O banco de dados, as permissões e o armazenamento privado já foram configurados.
+Não é necessário executar SQL nem configurar novamente o servidor.
+O site ainda precisa receber os arquivos deste pacote.
+
+COMO PUBLICAR NO GITHUB
+1. Extraia o ZIP. Não envie o ZIP como um arquivo para o site.
+2. No repositório do CAHK Portal, envie os arquivos da pasta public deste pacote
+   para a pasta public já existente, mantendo as subpastas e substituindo os
+   arquivos com o mesmo nome. São apenas 11 arquivos novos ou modificados.
+3. Não apague as outras pastas ou arquivos do portal.
+4. Aguarde a publicação automática do site e atualize a página.
+5. Se estiver usando o aplicativo instalado, feche-o por completo e abra de novo.
+
+O QUE MUDA
+• O botão principal de instalar aplicativo vira Fazer uma denúncia.
+• O botão flutuante de instalar deixa de aparecer na página inicial.
+• O formulário em /denuncias/ não pede nome, e-mail ou login.
+• Texto obrigatório: de 20 a 10.000 caracteres.
+• Imagens opcionais: até 3 fotos JPG, PNG ou WebP, com até 5 MB cada.
+  Elas são convertidas para JPEG e reduzidas antes do envio; conserve os originais.
+• Após salvar, o formulário exibe o protocolo de recebimento.
+• Na gestão, administradores ativos veem a nova aba Denúncias.
+• Cada registro possui relato, anexos, situação, observações internas e histórico.
+• Situações: Recebida, Em análise, Encaminhada e Encerrada.
+• Os relatos não aparecem no portal público, na Transparência ou no backup geral.
+
+ACESSO DA GESTÃO
+Entre na gestão como normalmente e abra Denúncias.
+Acesso permitido apenas a perfis ativos com função Administrador.
+Tesouraria, Caixa, Loja e Comunicação não recebem esse acesso automaticamente.
+Para rever as imagens caso o acesso temporário expire, use Recarregar registro.
+Em caso de conflito de edição, recarregue o registro antes de salvar novamente.
+Não há envio de e-mail: o recebimento acontece na aba Denúncias da gestão.
+
+ANONIMATO
+O formulário não solicita identificação e não envia a sessão administrativa do
+navegador. O texto e as imagens ainda podem revelar quem escreveu o relato.
+Registros técnicos dos serviços de hospedagem podem existir. Por isso, o site
+não promete anonimato absoluto e apresenta essa informação antes do envio.
+O protocolo confirma recebimento; ele não oferece consulta pública de status.
+
+ARQUIVOS DE REFERÊNCIA
+supabase/ contém o código do servidor e a instalação SQL para documentação.
+NÃO execute setup-denuncias.sql novamente no projeto atual: já está instalado.
+tests/ e docs/ documentam os testes e as decisões técnicas. Não precisam ser
+publicados para o formulário funcionar.

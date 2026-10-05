@@ -100,6 +100,7 @@
   function refreshButtons(){if(isStandalone())hideInstallButtons();}
 
   function createFab(){
+    if(location.pathname==='/'||location.pathname==='/index.html')return;
     if(document.querySelector('.cahk-install-fab'))return;
     const b=document.createElement('button');b.type='button';b.className='cahk-install-fab';b.dataset.cahkInstall='';b.setAttribute('aria-label','Instalar CAHK como aplicativo');b.innerHTML=icon+'<span>Instalar app</span>';document.body.appendChild(b);
   }

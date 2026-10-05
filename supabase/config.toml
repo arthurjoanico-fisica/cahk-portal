@@ -1,0 +1,4 @@
+# Acrescente este bloco ao config.toml existente ao usar a CLI.
+# A função admite envio público e valida JWT + perfil admin em cada operação de gestão.
+[functions.cahk-denuncias]
+verify_jwt = false

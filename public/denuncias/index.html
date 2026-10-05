@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+  <title>Fazer uma denúncia — CAHK</title>
+  <link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="styles.css?v=6.1.4">
+  <script>try{const t=localStorage.getItem('cahk-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch{}</script>
+</head>
+<body>
+  <header class="header"><a class="brand" href="/"><img src="/assets/cahk-logo-v32.png" alt=""><span>CAHK <small>Centro Acadêmico Hugo Kremer</small></span></a><a class="back" href="/">Voltar ao portal →</a></header>
+  <main>
+    <div class="eyebrow">CANAL DE ACOLHIMENTO E REGISTRO</div>
+    <h1>Fazer uma denúncia</h1>
+    <p class="intro">Descreva a situação que deseja encaminhar à gestão do CAHK. Você não precisa informar nome, e-mail ou fazer login.</p>
+    <aside class="privacy"><strong>Sobre o anonimato e a privacidade</strong><p>O formulário não solicita sua identificação. O texto e as imagens, porém, podem revelar quem você é. Revise o conteúdo antes de enviar. Os relatos e anexos ficam restritos aos administradores autorizados.</p><p>As imagens são convertidas e seus metadados usuais, como localização, são removidos. Essa conversão pode reduzir a qualidade: guarde os arquivos originais. Registros técnicos dos serviços de hospedagem podem existir; não é possível garantir anonimato absoluto.</p></aside>
+    <section id="receipt" class="receipt" hidden aria-live="polite" tabindex="-1"><div class="check" aria-hidden="true">✓</div><h2>Denúncia recebida</h2><p>Seu relato foi registrado para análise da gestão.</p><div class="protocol">Protocolo <strong id="receiptCode"></strong></div><p class="small">Guarde este número se desejar se referir ao registro. Ele confirma o recebimento e não permite consulta pública.</p><button id="newReport" class="secondary" type="button">Fazer outro relato</button></section>
+    <form id="reportForm" class="card" autocomplete="off">
+      <label for="reportText">O que aconteceu? <span class="required">Obrigatório</span></label>
+      <p class="help" id="textHelp">Se possível, descreva o ocorrido, quando e onde aconteceu. Inclua somente informações necessárias para a análise.</p>
+      <textarea id="reportText" name="text" rows="9" minlength="20" maxlength="10000" required aria-describedby="textHelp textCount" placeholder="Escreva seu relato aqui…"></textarea>
+      <div class="counter" id="textCount">0 / 10.000 caracteres · mínimo de 20</div>
+      <div class="image-field"><label for="reportImages">Imagens <span class="optional">Opcional</span></label><p class="help" id="imageHelp">Até 3 imagens JPG, PNG ou WebP, com até 5 MB cada. Revise nomes, rostos e outras informações visíveis antes de anexar.</p><input id="reportImages" type="file" accept="image/jpeg,image/png,image/webp" multiple aria-describedby="imageHelp"><div id="imagePreview" class="image-preview"></div></div>
+      <div class="trap" aria-hidden="true"><label for="reportWebsite">Deixe este campo vazio</label><input id="reportWebsite" name="website" tabindex="-1" autocomplete="off"></div>
+      <label class="consent"><input id="reportConsent" type="checkbox" required><span>Entendo que a gestão receberá este relato para análise e que o conteúdo e as imagens podem revelar minha identidade.</span></label>
+      <div id="formMessage" role="status" aria-live="polite"></div>
+      <button id="submitReport" class="primary" type="submit">Enviar denúncia <span aria-hidden="true">→</span></button>
+      <p class="small">O recebimento será confirmado nesta tela após o envio. Este canal não tem atendimento imediato.</p>
+    </form>
+    <footer>CAHK · Física UFPR <a href="/">Voltar ao portal</a></footer>
+  </main>
+  <script src="/gestao/config.js"></script><script src="app.js?v=6.1.4" defer></script>
+</body>
+</html>

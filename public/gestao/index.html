@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="CAHK">
   <title>Gestão CAHK</title><script>try{const t=localStorage.getItem('cahk-theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}</script>
   <link rel="stylesheet" href="styles.css?v=6.1.1">
+  <link rel="stylesheet" href="denuncias.css?v=6.1.4">
   <link rel="stylesheet" href="/assets/cahk-subpages-v4.css?v=6.0.11">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
@@ -49,6 +50,7 @@
         <button data-view="encomendas" data-perm="orders">Encomendas</button>
         <button data-view="mltn" data-perm="mltn">MLTN / POD</button>
         <button data-view="avisos" data-perm="notices">Avisos e Destaques</button>
+        <button id="complaintNav" data-view="denuncias" data-admin="1" class="hidden">Denúncias</button>
         <button data-view="biblioteca" data-perm="library">Biblioteca Virtual</button>
         <button data-view="academico" data-perm="library">Acadêmico / Disciplinas</button>
         <button data-view="produtos" data-perm="products">Produtos / Loja</button>
@@ -86,6 +88,21 @@
           <div class="card"><h2>Validades próximas</h2><div id="dashboardExpiry" class="compact-list"><div class="empty">Carregando…</div></div></div>
         </div>
         <div class="card"><h2>Atalhos</h2><div class="dashboard-actions"><button class="primary" data-dash-view="pdv">Nova venda</button><button class="ghost" data-dash-view="entrada">Dar entrada</button><button class="ghost" data-dash-view="inventario">Inventário</button><button class="ghost" data-dash-view="encomendas">Encomendas</button><button class="ghost" data-dash-view="biblioteca">Biblioteca</button><a class="ghost button-link" href="/" target="_blank">Abrir portal</a></div></div>
+      </section>
+
+      <section id="view-denuncias" class="view hidden">
+        <div class="complaint-notice"><strong>Registros confidenciais.</strong> Acesso exclusivo de administradores ativos. Evite compartilhar relatos e imagens fora do encaminhamento necessário. O registro de uma denúncia não confirma os fatos relatados.</div>
+        <div class="card">
+          <div class="complaint-toolbar"><div><h2>Denúncias recebidas</h2><p class="muted small">Relatos encaminhados pelo formulário do portal.</p></div><label>Situação<select id="complaintFilter"><option value="">Todas</option><option value="recebida">Recebidas</option><option value="em_analise">Em análise</option><option value="encaminhada">Encaminhadas</option><option value="encerrada">Encerradas</option></select></label><button id="complaintRefresh" class="ghost" type="button">Atualizar lista</button></div>
+          <div id="complaintMessage" class="complaint-message" role="status" aria-live="polite"></div><div id="complaintList"></div>
+          <div class="complaint-pagination"><button id="complaintPrev" class="ghost" type="button" disabled>← Anterior</button><span id="complaintPage">Página 1</span><button id="complaintNext" class="ghost" type="button" disabled>Próxima →</button></div>
+        </div>
+        <div id="complaintDetail" class="card complaint-detail" hidden>
+          <div class="section-head"><div><h2 id="complaintProtocol"></h2><p id="complaintCreated" class="muted small"></p></div><div class="actions"><button id="complaintReload" class="ghost" type="button">Recarregar registro</button><button id="complaintClose" class="ghost" type="button">Fechar</button></div></div>
+          <h3>Relato recebido</h3><div id="complaintText" class="complaint-text"></div><div id="complaintPhotos" class="complaint-photos"></div><p id="complaintPhotoHint" class="muted small"></p>
+          <h3>Registro da gestão</h3><form id="complaintForm" class="stack"><label>Situação<select id="complaintStatus"><option value="recebida">Recebida</option><option value="em_analise">Em análise</option><option value="encaminhada">Encaminhada</option><option value="encerrada">Encerrada</option></select></label><label>Observações internas<textarea id="complaintNotes" rows="5" maxlength="10000" placeholder="Registre os encaminhamentos e as providências tomadas."></textarea></label><div><button id="complaintSave" class="primary" type="submit">Salvar registro</button></div></form>
+          <h3>Histórico de atualizações</h3><div id="complaintHistory"></div>
+        </div>
       </section>
 
       <section id="view-pdv" class="view hidden">
@@ -500,7 +517,7 @@
     </main>
   </div>
 
-  <script src="app.js?v=6.1.1"></script><script src="v6.js?v=6.1.2"></script><script src="news-admin.js?v=6.1.1"></script>
+  <script src="app.js?v=6.1.4"></script><script src="denuncias.js?v=6.1.4"></script><script src="v6.js?v=6.1.2"></script><script src="news-admin.js?v=6.1.1"></script>
 
   <div id="mltnOrderModal" class="mltn-modal hidden" role="dialog" aria-modal="true" aria-labelledby="mltnModalTitle">
     <div class="mltn-modal-card">

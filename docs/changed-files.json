@@ -1,0 +1,13 @@
+[
+  "public/build.txt",
+  "public/denuncias/app.js",
+  "public/denuncias/index.html",
+  "public/denuncias/styles.css",
+  "public/gestao/app.js",
+  "public/gestao/denuncias.css",
+  "public/gestao/denuncias.js",
+  "public/gestao/index.html",
+  "public/index.html",
+  "public/pwa.js",
+  "public/sw.js"
+]
