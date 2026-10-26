@@ -32,10 +32,28 @@ export function createScene(canvas){
    const hand=new T.Mesh(new T.CapsuleGeometry(.065,.12,4,8),skin);hand.position.set(0,-.2,.015);arm.add(hand);
    arm.traverse(o=>o.layers.set(i+1));return arm;
  });
+ const racketTurns=[new T.Quaternion(),new T.Quaternion()],targetTurn=new T.Quaternion(),baseGrip=new T.Quaternion().setFromEuler(new T.Euler(-.18,-.22,.15)),armOffset=new T.Vector3(.1,.25,-.37),armPivot=new T.Vector3(.3,-.65,-.35);
+ let previousDraw=null;
  let width=0,height=0;const resize=()=>{const r=canvas.getBoundingClientRect(),w=Math.round(r.width),h=Math.round(r.height);if(w===width&&h===height)return;width=w;height=h;if(width>0&&height>0)renderer.setSize(width,height,false);};
  const observer=new ResizeObserver(resize);observer.observe(canvas);let lost=false;canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;});canvas.addEventListener('webglcontextrestored',()=>{lost=false;});
- return {draw(g,time,{layout='split',overview=true}={}){if(lost)return;resize();if(!width||!height)return;canvas.dataset.layout=layout;canvas.dataset.stacked=String(width/height<1.1);canvas.dataset.overview=String(layout==='split'&&overview);
-   players.forEach((v,i)=>{const p=g.players[i],walking=Math.hypot(p.x-v.lastX,p.z-v.lastZ)>.001;v.group.position.set(p.x,0,p.z);v.group.rotation.y=i?Math.PI:0;v.arm.rotation.x=-p.pose*1.7;v.arm.rotation.z=p.pose*.8;v.legs.forEach((l,j)=>l.rotation.x=walking?Math.sin(time*12+j*Math.PI)*.38:0);v.lastX=p.x;v.lastZ=p.z;firstPersonArms[i].rotation.x=-.18-p.pose*.95;firstPersonArms[i].rotation.z=.15-p.pose*.6;});
+ return {draw(g,time,{layout='split',overview=true,poses=[null,null]}={}){if(lost)return;resize();if(!width||!height)return;canvas.dataset.layout=layout;canvas.dataset.stacked=String(width/height<1.1);canvas.dataset.overview=String(layout==='split'&&overview);
+   const elapsed=previousDraw===null?1/60:Math.max(0,Math.min(.2,time-previousDraw));previousDraw=time;
+   players.forEach((v,i)=>{
+     const p=g.players[i],walking=Math.hypot(p.x-v.lastX,p.z-v.lastZ)>.001,q=poses?.[i];
+     v.group.position.set(p.x,0,p.z);v.group.rotation.y=i?Math.PI:0;
+     v.legs.forEach((l,j)=>l.rotation.x=walking?Math.sin(time*12+j*Math.PI)*.38:0);v.lastX=p.x;v.lastZ=p.z;
+     const arm=firstPersonArms[i];
+     if(q){
+       targetTurn.fromArray(q).normalize();racketTurns[i].slerp(targetTurn,1-Math.exp(-22*elapsed));
+       // A fixed virtual elbow supplies reach. Sensors measure rotation, not hand position.
+       arm.position.copy(armOffset).applyQuaternion(racketTurns[i]).add(armPivot);
+       arm.quaternion.copy(racketTurns[i]).multiply(baseGrip);
+       v.arm.quaternion.copy(racketTurns[i]);
+     }else{
+       racketTurns[i].identity();arm.position.set(.4,-.4,-.72);arm.rotation.set(-.18-p.pose*.95,-.22,.15-p.pose*.6);
+       v.arm.rotation.set(-p.pose*1.7,0,p.pose*.8);
+     }
+   });
    ball.position.set(g.ball.x,Math.max(.1,g.ball.y),g.ball.z);ball.rotation.x+=.05;shadow.position.x=g.ball.x;shadow.position.z=g.ball.z;shadow.material.opacity=.45/(1+g.ball.y*.3);
    renderer.setScissorTest(false);renderer.setViewport(0,0,width,height);renderer.setClearColor(0x352943,1);renderer.clear();renderer.setScissorTest(true);renderer.autoClear=false;
    for(const view of computeViewports(width,height,{layout,overview})){

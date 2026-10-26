@@ -65,11 +65,17 @@ export function validateMessage(role, message) {
   if (type === 'ping' || type === 'pong') return { type };
   if (role !== 'host') {
     if (type === 'ready' && typeof message.ready === 'boolean') return { type, ready: message.ready };
+    if (type === 'pose' && Array.isArray(message.q) && message.q.length === 4
+      && message.q.every(v => range(v, -1, 1))) {
+      const norm = Math.hypot(...message.q);
+      if (norm >= .9 && norm <= 1.1) return { type, q: message.q.map(v => v / norm) };
+    }
     if (type === 'swing') {
       const { power, aim, lob, spin, id } = message;
       if (range(power, 0, 1) && range(aim, -1, 1) && range(lob, 0, 1) && range(spin, -1, 1)
+        && (message.topspin === undefined || range(message.topspin, -1, 1))
         && typeof id === 'string' && id.length > 0 && id.length <= 128 && !/[\u0000-\u001f]/.test(id)) {
-        return { type, power, aim, lob, spin, id };
+        return { type, power, aim, lob, spin, id, ...(message.topspin === undefined ? {} : { topspin: message.topspin }) };
       }
     }
   } else {
@@ -158,6 +164,7 @@ export class ArenaRoom {
     const now = Date.now();
     const attachment = { role, active: true, connectionId: randomSecret(16), ready: false,
       seen: previous?.seen ?? [], swings: previous?.swings ?? { tokens: 4, at: now },
+      poses: previous?.poses ?? { tokens: 4, at: now },
       messages: previous?.messages ?? { tokens: 60, at: now } };
     this.ctx.acceptWebSocket(server, [role]);
     server.serializeAttachment(attachment);
@@ -224,6 +231,13 @@ export class ArenaRoom {
           socket.serializeAttachment(attachment);
           this.broadcastPresence();
         }
+        break;
+      case 'pose':
+        if (!attachment.ready || !this.sessions.has('host')) return;
+        attachment.poses ??= { tokens: 4, at: now };
+        if (!take(attachment.poses, now, 4, 20)) return;
+        socket.serializeAttachment(attachment);
+        this.send(this.sessions.get('host'), { ...message, player: attachment.role === 'p1' ? 0 : 1 });
         break;
       case 'swing':
         if (attachment.seen.includes(message.id)) return;

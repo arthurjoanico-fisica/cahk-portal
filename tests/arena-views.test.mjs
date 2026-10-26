@@ -8,3 +8,14 @@ test('player cameras face opposite halves from player eye height',()=>{assert.eq
 test('local spectator snapshots allow only public match state and no credentials',()=>{assert.equal(typeof broadcast.spectatorSnapshot,'function');const s=broadcast.spectatorSnapshot({names:['Ana','Bia'],scores:[2,1],players:[{x:0,z:4,pose:0},{x:0,z:-4,pose:0}],ball:{x:0,y:1,z:0},phase:'serve',serving:0,rally:3,paused:false,hostToken:'secret',padTokens:['a','b']},'quick',100);assert.equal(s.type,'frame');assert.equal(s.at,100);assert.equal(s.game.hostToken,undefined);assert.equal(s.game.padTokens,undefined);assert.deepEqual(s.game.scores,[2,1]);});
 test('rightward aim and spin follow each player perspective without changing shot power',()=>{assert.equal(typeof views.playerRelativeShot,'function');const shot={power:.6,aim:.75,lob:.2,spin:.3};assert.deepEqual(views.playerRelativeShot(shot,0),shot);assert.deepEqual(views.playerRelativeShot(shot,1),{power:.6,aim:-.75,lob:.2,spin:-.3});assert.equal(shot.aim,.75);});
 test('the held serve ball remains visible in both player cameras',async()=>{const T=await import('three');for(const i of [0,1]){const side=i===0?1:-1,p=views.playerCameraPose({x:0,z:side*4.6},i),camera=new T.PerspectiveCamera(64,1.1,.08,100);camera.position.set(p.eye.x,p.eye.y,p.eye.z);camera.lookAt(p.target.x,p.target.y,p.target.z);camera.updateMatrixWorld();const ball=new T.Vector3(0,1,side*4.2).project(camera);assert.ok(Math.abs(ball.x)<=1&&Math.abs(ball.y)<=1,`serve ball outside player ${i+1} view: ${ball.y}`);}});
+test('spectator transfers relative racket poses outside saved game state',()=>{
+ const g={names:['A','B'],scores:[0,0],players:[{x:0,z:4,pose:0},{x:0,z:-4,pose:0}],ball:{x:0,y:1,z:0},phase:'serve',serving:0,rally:0,paused:false};
+ const poses=[[0,.6,0,.8],null],s=broadcast.spectatorSnapshot(g,'quick',100,poses);
+ assert.deepEqual(s.poses,poses);assert.equal(s.game.poses,undefined);assert.equal(broadcast.validSpectatorSnapshot(s),true);
+ poses[0][0]=1;assert.equal(s.poses[0][0],0);
+ assert.equal(broadcast.validSpectatorSnapshot({...s,poses:[[0,0,0,0],null]}),false);
+ assert.equal(broadcast.validSpectatorSnapshot({...s,poses:[[0,0,0,1]]}),false);
+});
+test('topspin retains its sense from both player perspectives',()=>{
+ assert.equal(views.playerRelativeShot({aim:.2,spin:.4,topspin:-.7},1).topspin,-.7);
+});

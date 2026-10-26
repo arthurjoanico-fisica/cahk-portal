@@ -9,6 +9,7 @@ import QR from './vendor/qrcode.mjs';
 export function startArena(){
 const $=id=>document.getElementById(id),KEY='cahk-arena-session-v1',BACKUP='cahk-arena-checkpoint-v1';
 let mode='quick',session=null,ws=null,presence={host:false,pads:[false,false],ready:[false,false]},game=null,tournament=null,matchId=null,scene=null,running=false,manualPause=false,serverReady=false,reconnectTimer=null,leaving=false,finishedHandled=false,last=0,accumulator=0,botAt=0,toastTimer=null,sound=false,audio=null,recovering=false,heartbeat=null;
+let racketPoses=[null,null],poseReceived=[0,0];
 let view='players',localScreen=null,broadcastAt=0,localPulse=null,lastPaint=0;
 const read=key=>{try{return JSON.parse(localStorage.getItem(key));}catch{return null;}};
 const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{notify('O navegador bloqueou o backup local. Mantenha esta aba aberta.');}};
@@ -45,7 +46,8 @@ function openHost(){
   socket.onopen=()=>{if(ws!==socket)return;serverReady=true;clearInterval(heartbeat);const link=new LinkWatch(performance.now());socket.link=link;let lastPing=performance.now(),wasActive=false;heartbeat=setInterval(()=>{if(ws!==socket)return;const now=performance.now(),active=running&&game&&!game.paused;if(active&&!wasActive){link.heard(now);send({type:'ping'});lastPing=now;}wasActive=active;link.timeout=active?3000:45000;if(link.expired(now)){serverReady=false;refreshPresence();socket.close();}else if(now-lastPing>=(active?1000:15000)){send({type:'ping'});lastPing=now;}},1000);};
   socket.onmessage=e=>{if(ws!==socket)return;let m;try{m=JSON.parse(e.data);}catch{return;}
     socket.link?.heard(performance.now());
-    if(m.type==='presence'){presence=m;refreshPresence();}
+    if(m.type==='presence'){presence=m;for(let i=0;i<2;i++)if(!m.pads[i]||!m.ready[i])racketPoses[i]=null;refreshPresence();}
+    else if(m.type==='pose'&&[0,1].includes(m.player)&&presence.ready[m.player]){racketPoses[m.player]=m.q;poseReceived[m.player]=performance.now();}
     else if(m.type==='restore'){
       if(recovering){const chosen=newestCheckpoint(read(BACKUP),m.state);if(chosen)restore(chosen);recovering=false;if(chosen&&(!m.state||chosen.savedAt>m.state.savedAt))checkpoint();}
       else if(!game&&m.state)restore(m.state);
@@ -58,7 +60,7 @@ function openHost(){
     else if(m.type==='checkpoint-saved'||m.type==='saved')$('save-status').textContent='Placar salvo na sala e neste computador';
     else if(m.type==='error')notify(m.message||'Não foi possível atualizar a sala.');
   };
-  socket.onclose=()=>{if(ws!==socket)return;clearInterval(heartbeat);if(leaving)return;serverReady=false;presence={host:false,pads:[false,false],ready:[false,false]};refreshPresence();reconnectTimer=setTimeout(openHost,1800);};
+  socket.onclose=()=>{if(ws!==socket)return;clearInterval(heartbeat);if(leaving)return;serverReady=false;racketPoses=[null,null];presence={host:false,pads:[false,false],ready:[false,false]};refreshPresence();reconnectTimer=setTimeout(openHost,1800);};
   socket.onerror=()=>{if(ws===socket){serverReady=false;refreshPresence();socket.close();$('connection').textContent='Falha na conexão · tentando novamente';}};
 }
 function padLink(i){return `${location.origin}/arena/pad/?room=${encodeURIComponent(session.room)}&player=${i+1}#token=${encodeURIComponent(session.padTokens[i])}`;}
@@ -73,7 +75,7 @@ function showCourt(){
   $('bracket-button').hidden=mode!=='tournament';drawPairing();
   connectLocalScreen();
 }
-function publishLocalFrame(){if(localScreen&&game)localScreen.postMessage(spectatorSnapshot(game,mode));}
+function publishLocalFrame(){if(localScreen&&game)localScreen.postMessage(spectatorSnapshot(game,mode,Date.now(),racketPoses));}
 function connectLocalScreen(){
   if(!session||!('BroadcastChannel'in window))return;
   const name=spectatorChannel(session.room);if(localScreen?.name===name)return;
@@ -153,17 +155,18 @@ window.addEventListener('keydown',e=>{if(e.target.matches('input,textarea'))retu
 function frame(now){
  const dt=last?Math.min((now-last)/1000,.1):0;last=now;
  if(game){
+   for(let i=0;i<2;i++)if(now-poseReceived[i]>2500)racketPoses[i]=null;
    accumulator+=dt;while(accumulator>=1/120){stepGame(game,1/120);accumulator-=1/120;}
    if(mode==='training'&&running&&!game.paused&&now>botAt){
      const p=game.players[1],b=game.ball;
      if(game.phase==='serve'&&game.serving===1&&game.timer>1.2||game.phase==='rally'&&game.lastHit===0&&Math.abs(b.z-p.z)<1.05&&Math.abs(b.x-p.x)<1){swing(game,1,{power:.45,aim:Math.sin(now*.0009)*.75,lob:.2});botAt=now+400;}
    }
    if(game.event){const ev=game.event;game.event=null;if(ev.type==='point'){checkpoint();send({type:'feedback',player:ev.player,event:'point',power:1});tone(550,.15);}else if(ev.type==='bounce')tone(200,.035);}
-   drawHud();if(scene&&!$('court-view').hidden&&!document.hidden&&now-lastPaint>1000/(game.paused?10:60)){scene.draw(game,now/1000,{layout:view==='overview'?'overview':mode==='training'?'player':'split',overview:true});lastPaint=now;}
+   drawHud();if(scene&&!$('court-view').hidden&&!document.hidden&&now-lastPaint>1000/(game.paused?10:60)){scene.draw(game,now/1000,{layout:view==='overview'?'overview':mode==='training'?'player':'split',overview:true,poses:racketPoses});lastPaint=now;}
    if(localScreen&&!game.paused&&now-broadcastAt>1000/12){publishLocalFrame();broadcastAt=now;}
    if(game.phase==='finished'&&!finishedHandled)handleFinish();
    if(!game.paused&&running){$('game-call').textContent=game.phase==='serve'?`${game.names[game.serving]}\nFaça o movimento para sacar`:game.phase==='point'?'PONTO!':'';}
-   if(game.paused&&!running&&game.phase!=='finished')$('game-call').textContent='CONECTEM OS CELULARES';
+   if(game.paused&&!running&&game.phase!=='finished')$('game-call').textContent=canPlay()?'CONTROLES PRONTOS\nInicie pela tela de pareamento':'CONECTEM OS CELULARES';
  }
  requestAnimationFrame(frame);
 }

@@ -12,3 +12,17 @@ test('odd bracket advances byes and creates one champion',()=>{const t=createTou
 test('bracket rejects outsiders and duplicate results',()=>{const t=createTournament(['A','B','C','D']);const m=nextMatch(t);assert.throws(()=>completeMatch(t,m.id,'outsider',[7,0]));completeMatch(t,m.id,m.players[0].id,[7,0]);assert.throws(()=>completeMatch(t,m.id,m.players[0].id,[7,0]));});
 test('bracket requires unique names and 4 to 16 players',()=>{assert.throws(()=>createTournament(['a','b']));assert.throws(()=>createTournament(['Ana','ana','B','C']));});
 test('high lob serve lands inside the baseline for either player',()=>{for(const serving of [0,1]){const g=createGame();g.serving=serving;g.players[serving].z=serving?-4.6:4.6;swing(g,serving,{power:.65,aim:0,lob:.8,spin:0});let n=0;while(g.phase==='rally'&&g.ball.bounces===0&&n++<500)stepGame(g,1/120);assert.equal(g.phase,'rally');assert.equal(g.ball.bounces,1);assert.ok(Math.abs(g.ball.z)<6.7);}});
+test('topspin and backspin change flight and forward bounce without changing the target',()=>{
+ for(const serving of [0,1]){
+  function flight(topspin){const g=createGame();g.serving=serving;swing(g,serving,{power:.5,aim:0,lob:.1,spin:0,topspin});const initialVy=g.ball.vy;let n=0;while(g.phase==='rally'&&g.ball.bounces===0&&n++<500)stepGame(g,1/120);return {initialVy,g};}
+  const top=flight(1),back=flight(-1);assert.ok(top.initialVy>back.initialVy);assert.equal(top.g.ball.bounces,1);assert.equal(back.g.ball.bounces,1);assert.ok(Math.abs(top.g.ball.vz)>Math.abs(back.g.ball.vz));assert.ok(Math.abs(top.g.ball.z)<6.7&&Math.abs(back.g.ball.z)<6.7);assert.ok(Math.abs(top.g.ball.z-back.g.ball.z)<.2);
+ }
+});
+test('opposite lateral effects produce opposite flight and bounce deviations',()=>{
+ function shot(spin){const g=createGame();swing(g,0,{power:.5,aim:0,lob:.1,spin});let n=0;while(g.phase==='rally'&&g.ball.bounces===0&&n++<500)stepGame(g,1/120);assert.equal(g.ball.bounces,1);return g.ball;}
+ const a=shot(1),b=shot(-1);assert.ok(a.x>0&&b.x<0);assert.ok(a.vx>0&&b.vx<0);
+});
+test('missing vertical effect preserves the zero-effect shot of older controllers',()=>{
+ const a=createGame(),b=createGame();swing(a,0,{power:.6,aim:.3,lob:.2,spin:.1});swing(b,0,{power:.6,aim:.3,lob:.2,spin:.1,topspin:0});
+ for(let i=0;i<130;i++){stepGame(a,1/120);stepGame(b,1/120);}assert.deepEqual(a,b);
+});

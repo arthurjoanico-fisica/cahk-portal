@@ -26,13 +26,26 @@ test('two actual phone clients pair, play, disconnect and restore a saved host',
 
 test('motion permission and calibration reach a real host through the controller page',async()=>{
  const host=await browser.newPage({viewport:{width:1280,height:900}});await host.goto(base+'/arena/');await host.locator('[data-mode="training"]').click();await host.locator('#create').click();await host.locator('#pair-dialog').waitFor({state:'visible'});const session=await host.evaluate(()=>JSON.parse(localStorage.getItem('cahk-arena-session-v1')));
+ await host.evaluate(room=>{window.__racketFrames=[];window.__observer=new BroadcastChannel('cahk-arena-local-view-v1:'+room);window.__observer.onmessage=e=>window.__racketFrames.push(e.data);},session.room);
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  await context.addInitScript(()=>{
    class Sensors {static async requestPermission(){return 'granted';}}Object.defineProperty(window,'DeviceMotionEvent',{value:Sensors});Object.defineProperty(window,'DeviceOrientationEvent',{value:Sensors});
    window.__reading={alpha:0,beta:0,gamma:0};window.__rate={alpha:0,beta:0,gamma:0};
    setInterval(()=>{const orientation=new Event('deviceorientation');for(const k of ['alpha','beta','gamma'])Object.defineProperty(orientation,k,{value:window.__reading[k]});dispatchEvent(orientation);const motion=new Event('devicemotion');Object.defineProperty(motion,'rotationRate',{value:{...window.__rate}});dispatchEvent(motion);},16);
  });
- const phone=await context.newPage();await phone.goto(`${base}/arena/pad/?room=${session.room}&player=1#token=${session.padTokens[0]}`);await phone.locator('#start').click();await host.waitForFunction(()=>!document.getElementById('start').disabled);await phone.screenshot({path:'test-results/arena-phone.png',fullPage:true});await host.locator('#start').click();
+ const phone=await context.newPage();await phone.goto(`${base}/arena/pad/?room=${session.room}&player=1#token=${session.padTokens[0]}`);await phone.locator('#start').click();await host.waitForFunction(()=>!document.getElementById('start').disabled);await phone.screenshot({path:'test-results/arena-phone.png',fullPage:true});
+ await host.waitForFunction(()=>window.__racketFrames.some(f=>f.poses?.[0]));
+ await host.locator('#pair-dialog .close-dialog').click();
+ const beforePose=await host.locator('#court').screenshot();
+ await phone.evaluate(()=>window.__reading.alpha=45);
+ await host.waitForFunction(()=>window.__racketFrames.some(f=>f.poses?.[0]?.[1]>.35));
+ await host.waitForTimeout(250);
+ const afterPose=await host.locator('#court').screenshot({path:'test-results/arena-racket-live.png'});
+ assert.equal(beforePose.equals(afterPose),false,'live orientation changes rendered racket');
+ assert.equal(await host.locator('#rally').textContent(),'PREPARE SUA RAQUETE','pose alone never hits the ball');
+ const saved=await host.evaluate(()=>JSON.parse(localStorage.getItem('cahk-arena-checkpoint-v1')));
+ assert.equal(saved.game.poses,undefined);assert.equal(saved.racketPoses,undefined);
+ await host.locator('#pairing').click();await host.locator('#start').click();
  await phone.evaluate(()=>{let n=0;const timer=setInterval(()=>{window.__rate={alpha:0,beta:n<12?300:0,gamma:0};window.__reading.beta=Math.min(65,n*5);if(++n>22){clearInterval(timer);window.__rate={alpha:0,beta:0,gamma:0};}},16);});
  await host.waitForFunction(()=>document.getElementById('rally').textContent==='RALLY 1',{},{timeout:5000});await context.close();await host.close();
 });

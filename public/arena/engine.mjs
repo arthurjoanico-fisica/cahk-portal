@@ -19,12 +19,12 @@ export function swing(g,player,shot={}){
   const serve=g.phase==='serve';
   if(serve&&g.serving!==player)return false;
   if(!serve&&(g.lastHit===player||Math.abs(b.x-p.x)>1.2||Math.abs(b.z-p.z)>1.35||b.y>2.8||b.y<.05))return false;
-  const power=clamp(finite(shot.power,.4),0,1),aim=clamp(finite(shot.aim),-1,1),lob=clamp(finite(shot.lob,.25),0,1),spin=clamp(finite(shot.spin),-1,1);
+  const power=clamp(finite(shot.power,.4),0,1),aim=clamp(finite(shot.aim),-1,1),lob=clamp(finite(shot.lob,.25),0,1),spin=clamp(finite(shot.spin),-1,1),topspin=clamp(finite(shot.topspin),-1,1);
   const sign=player===0?-1:1, speed=7+power*6, targetZ=sign*(4.8+power*.7),tx=aim*2.65;
   if(serve){b.x=p.x;b.y=1;b.z=p.z+sign*.4;}
   // A lob increases flight time and height while retaining the same landing target.
-  const t=Math.max(.5,Math.abs(targetZ-b.z)/speed)*(1+lob*.45),desiredVy=(.12-b.y+4.9*t*t)/t;
-  b.vx=(tx-b.x)/t;b.vz=(targetZ-b.z)/t;b.vy=desiredVy;b.spin=spin;b.bounces=0;
+  const t=Math.max(.5,Math.abs(targetZ-b.z)/speed)*(1+lob*.45),gravity=9.8+topspin*3.5,desiredVy=(.12-b.y+.5*gravity*t*t)/t;
+  b.vx=(tx-b.x)/t;b.vz=(targetZ-b.z)/t;b.vy=desiredVy;b.spin=spin;b.topspin=topspin;b.bounces=0;
   g.lastHit=player;g.phase='rally';g.rally++;g.timer=0;g.event={type:'hit',player,power};
   return true;
 }
@@ -42,12 +42,12 @@ export function stepGame(g,dt){
     const targetZ=inbound?sign*clamp(sign*(b.z+b.vz*.32),1.1,5.55):sign*4.3;
     p.x+=clamp(targetX-p.x,-3.9*dt,3.9*dt);p.z+=clamp(targetZ-p.z,-3.3*dt,3.3*dt);
   });
-  const oldZ=b.z;b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;b.vy-=9.8*dt;b.vx+=finite(b.spin)*.7*dt;
+  const oldZ=b.z;b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;b.vy-=(9.8+finite(b.topspin)*3.5)*dt;b.vx+=finite(b.spin)*.7*dt;
   if(oldZ*b.z<0&&b.y<COURT.netHeight){awardPoint(g,1-g.lastHit);return;}
   if(b.y<=.08&&b.vy<0){
     if(Math.abs(b.x)>COURT.halfWidth||Math.abs(b.z)>COURT.halfLength){awardPoint(g,1-g.lastHit);return;}
     b.bounces++;if(b.bounces>=2){awardPoint(g,g.lastHit);return;}
-    b.y=.08;b.vy=Math.abs(b.vy)*.72;b.vx+=finite(b.spin)*.8;g.event={type:'bounce'};
+    b.y=.08;b.vy=Math.abs(b.vy)*.72;b.vx+=finite(b.spin)*.8;b.vz*=1+finite(b.topspin)*.12;g.event={type:'bounce'};
   }
   if(Math.abs(b.z)>8.2||Math.abs(b.x)>5){awardPoint(g,b.bounces>0?g.lastHit:1-g.lastHit);}
 }

@@ -63,3 +63,15 @@ atual permite isso. Cloudflare tem sua própria franquia, limites e métricas:
 zero consumo adicional no Supabase não significa uso ilimitado no Cloudflare.
 Referências oficiais: https://supabase.com/docs/guides/platform/billing-on-supabase
 e https://supabase.com/docs/guides/realtime/limits .
+
+## Atualização: raquete com orientação contínua
+
+A raquete 3D continua sem usar Supabase. O celular transmite apenas quaternion
+relativo, limitado a 15 Hz em movimento e 1 Hz parado, além de gestos e
+prontidão. As amostras brutas ficam no aparelho. As poses não entram no SQLite
+nem no backup local. O telão recebe uma cópia pública por BroadcastChannel.
+
+Isso eleva o tráfego do Cloudflare: duas pessoas podem enviar até 30 poses/s,
+ou 108.000 mensagens em uma hora de movimento contínuo, além de rebatidas e
+controle. O relay limita a frequência e suspende encaminhamento sem host ou
+sem prontidão. A contagem de mensagens não é uma estimativa de cobrança.

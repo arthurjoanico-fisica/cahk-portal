@@ -1,4 +1,5 @@
 import { MotionController, normalizeSensitivity } from './motion.mjs';
+import { angleBetween } from './racket-math.mjs';
 
 export function createPad({ window: win = globalThis.window, document: doc = globalThis.document } = {}) {
   const $ = id => doc.getElementById(id);
@@ -10,6 +11,7 @@ export function createPad({ window: win = globalThis.window, document: doc = glo
   const token = new URLSearchParams(url.hash.slice(1)).get('token') || '';
   const validInvite = /^[A-Za-z0-9_-]{1,128}$/.test(room) && ['1', '2'].includes(player) && token.length > 0 && token.length <= 512;
   const clock = () => win.performance.now();
+  let lastPose = null, poseAt = -Infinity;
   let socket = null, connected = false, host = false, sentReady = null;
   let retryTimer = null, retryDelay = 500, heartbeat = null, heartbeatAt = 0;
   let mode = 'idle', permissionGranted = false, sensorError = '', transportError = '';
@@ -28,6 +30,15 @@ export function createPad({ window: win = globalThis.window, document: doc = glo
   function send(packet) {
     if (!connected || socket?.readyState !== win.WebSocket.OPEN) return false;
     try { socket.send(JSON.stringify(packet)); return true; } catch { return false; }
+  }
+  function syncPose() {
+    if (mode !== 'motion' || !ready() || !host || !visible() || socket?.bufferedAmount > 16384) return;
+    const q = motion.getPose();
+    if (!q) return;
+    const now = clock(), elapsed = now - poseAt;
+    if (elapsed < 1000 / 15) return;
+    if (lastPose && angleBetween(q, lastPose) <= 1.5 * Math.PI / 180 && elapsed < 1000) return;
+    if (send({ type: 'pose', q })) { lastPose = q; poseAt = now; }
   }
   function syncReady() {
     const value = ready();
@@ -59,9 +70,9 @@ export function createPad({ window: win = globalThis.window, document: doc = glo
     } else if (mode === 'requesting') {
       title = 'Autorize o movimento'; detail = 'Permita movimento e orientação quando o celular solicitar.';
     } else if (mode === 'idle') {
-      title = 'Sua próxima jogada começa aqui.'; detail = 'Toque em iniciar, autorize os sensores e segure o celular na posição de jogo.';
+      title = 'Sua próxima jogada começa aqui.'; detail = 'Toque em iniciar, autorize os sensores e segure o celular como o cabo de uma raquete.';
     } else if (mode === 'motion' && !motion.calibrated) {
-      title = 'Encontre seu ponto neutro'; detail = 'Segure o celular confortável e parado por um instante. Nenhuma rebatida será enviada durante a calibração.';
+      title = 'Encontre seu ponto neutro'; detail = 'Segure com a tela voltada para você e a borda superior para cima, como o cabo de uma raquete. Fique parado por um instante para calibrar.';
     } else if (mode === 'motion' && !sensorFresh) {
       title = 'Aguardando os sensores'; detail = 'Mantenha esta página aberta. Precisamos receber leituras reais do celular.';
     } else if (!connected) {
@@ -71,7 +82,7 @@ export function createPad({ window: win = globalThis.window, document: doc = glo
     } else if (mode === 'manual') {
       title = 'Você joga pelo toque'; detail = 'Modo acessível ativo: ajuste a direção e toque em Rebater. Os sensores não controlam as jogadas neste modo.';
     } else {
-      title = 'Pronto para rebater'; detail = 'Faça um giro curto e firme, como uma raquete. Incline para mirar; levante a ponta para um lob.';
+      title = 'Pronto para rebater'; detail = 'Mire com o caminho e a face da raquete. Um arco amplo e rápido dá mais força; abra a face e suba para um lob.';
     }
     text('status-title', title);
     text('status-detail', detail);
@@ -106,6 +117,7 @@ export function createPad({ window: win = globalThis.window, document: doc = glo
   }
   function beginCalibration() {
     if (mode !== 'motion' || !permissionGranted) return;
+    lastPose = null;
     motion.calibrate(); sensorFresh = false; sensorError = '';
     sensingSince = clock(); lastReading = -Infinity;
     render();
@@ -147,7 +159,10 @@ export function createPad({ window: win = globalThis.window, document: doc = glo
   }
   function swing(shot) {
     if (!ready() || !host || socket.bufferedAmount > 16384) return;
-    if (send({ ...shot, type: 'swing', id: win.crypto.randomUUID() })) flash('Rebatida enviada');
+    if (send({ ...shot, type: 'swing', id: win.crypto.randomUUID() })) {
+      const effect = Math.abs(shot.spin) > 0.35 ? ' · corte lateral' : shot.topspin > 0.35 ? ' · topspin' : shot.topspin < -0.35 ? ' · backspin' : '';
+      flash(`Gesto enviado${effect}`, shot.power);
+    }
   }
   function scheduleReconnect() {
     if (retryTimer !== null || !visible() || !validInvite || transportError) return;
@@ -163,7 +178,7 @@ export function createPad({ window: win = globalThis.window, document: doc = glo
     let next;
     try { next = new win.WebSocket(wsUrl.href); }
     catch { scheduleReconnect(); render(); return; }
-    socket = next; sentReady = null;
+    socket = next; sentReady = null; lastPose = null; poseAt = -Infinity;
     next.addEventListener('open', () => {
       if (socket !== next || !visible()) { next.close(); return; }
       connected = true; retryDelay = 500; heartbeatAt = clock();
@@ -180,7 +195,10 @@ export function createPad({ window: win = globalThis.window, document: doc = glo
       try { data = JSON.parse(event.data); } catch { return; }
       if (!data || typeof data !== 'object') return;
       heartbeatAt = clock();
-      if (data.type === 'presence') { host = data.host === true; render(); }
+      if (data.type === 'presence') {
+        if (!host && data.host === true) lastPose = null;
+        host = data.host === true; render(); syncPose();
+      }
       else if (data.type === 'ping') send({ type: 'pong' });
       else if (data.type === 'calibrate') beginCalibration();
       else if (data.type === 'feedback' && ['hit', 'point'].includes(data.event) && Number.isFinite(data.power)) {
@@ -216,7 +234,7 @@ export function createPad({ window: win = globalThis.window, document: doc = glo
     lastManualShot = clock();
     const aim = Number($('manual-aim').value);
     swing({ power: 0.65, aim: Number.isFinite(aim) ? Math.max(-1, Math.min(1, aim)) : 0,
-      lob: $('manual-lob').checked ? 0.8 : 0, spin: 0 });
+      lob: $('manual-lob').checked ? 0.8 : 0, spin: 0, topspin: 0 });
   });
   function cancelHold() {
     win.clearTimeout(heldTimer); heldTimer = null;
@@ -251,12 +269,13 @@ export function createPad({ window: win = globalThis.window, document: doc = glo
     const now = clock(), rate = event.rotationRate;
     const freshOrientation = now - orientationAt <= 400 ? orientation : null;
     const wasCalibrated = motion.calibrated;
-    const shot = motion.sample({ rotationRate: rate, orientation: freshOrientation }, now);
+    const shot = motion.sample({ rotationRate: rate, orientation: freshOrientation, acceleration: event.acceleration }, now);
     if (motion.lastValidAt === now && freshOrientation) {
       lastReading = now; sensorFresh = true; sensorError = '';
     }
     if (!wasCalibrated && motion.calibrated) flash('Calibrado. Vamos jogar!');
     render();
+    syncPose();
     if (shot) swing(shot);
   });
   win.setInterval(() => {

@@ -23,6 +23,8 @@ function gesture(controller, { start = 1020, speed = 320, count = 12, orientatio
     const shot = controller.sample(sample(speed, orientation, 100, 35), start + i * 20);
     if (shot) shots.push(shot);
   }
+  const end = controller.sample(sample(0, orientation), start + count * 20);
+  if (end) shots.push(end);
   return shots;
 }
 
@@ -61,8 +63,9 @@ test('calibration needs sustained stillness, is silent, and replaces the neutral
   for (let t = 1400; t <= 2400; t += 20) assert.equal(c.sample(sample(0, nextNeutral), t), null);
   const [shot] = gesture(c, { start: 2420, orientation: nextNeutral });
   assert.ok(shot);
-  assert.equal(shot.aim, 0);
-  assert.equal(shot.lob, 0);
+  // Gyro-only fixtures still detect an arc; aiming now follows the path too.
+  assert.ok(Number.isFinite(shot.aim));
+  assert.ok(Number.isFinite(shot.lob));
 });
 
 test('a sustained gyro arc emits one normalized shot and cannot repeat without rest', () => {
@@ -71,9 +74,9 @@ test('a sustained gyro arc emits one normalized shot and cannot repeat without r
   assert.equal(shots.length, 1);
   assert.equal(shots[0].type, 'swing');
   assert.ok(shots[0].power > 0.2);
-  assert.ok(shots[0].aim > 0);
-  assert.ok(shots[0].lob > 0);
-  for (const [key, min, max] of [['power', 0, 1], ['aim', -1, 1], ['lob', 0, 1], ['spin', -1, 1]]) {
+  // This legacy gyro-only fixture jumps to a static tilt. Direction/effect
+  // signs belong to the physically coherent trajectory fixtures instead.
+  for (const [key, min, max] of [['power', 0, 1], ['aim', -1, 1], ['lob', 0, 1], ['spin', -1, 1], ['topspin', -1, 1]]) {
     assert.ok(Number.isFinite(shots[0][key]) && shots[0][key] >= min && shots[0][key] <= max);
   }
   for (let t = 1520; t <= 2000; t += 20) assert.equal(c.sample(sample(), t), null);
@@ -157,8 +160,8 @@ function environment({ permission = 'granted', supported = true, url = 'https://
   }
   win.WebSocket = class extends EventTarget {
     static OPEN = 1;
-    constructor(url) { super(); this.url = String(url); this.readyState = 0; this.packets = []; sockets.push(this); }
-    send(raw) { this.packets.push(JSON.parse(raw)); }
+    constructor(url) { super(); this.url = String(url); this.readyState = 0; this.packets = []; this.sentAt = []; sockets.push(this); }
+    send(raw) { this.packets.push(JSON.parse(raw)); this.sentAt.push(now); }
     open() { this.readyState = 1; this.dispatchEvent(new Event('open')); this.message({ type: 'presence', host: true, pads: [true, false], ready: [false, false] }); }
     message(data) { this.dispatchEvent(Object.assign(new Event('message'), { data: JSON.stringify(data) })); }
     close() { this.readyState = 3; this.dispatchEvent(new Event('close')); }
@@ -176,10 +179,10 @@ function environment({ permission = 'granted', supported = true, url = 'https://
     }
     now = end; await settle();
   };
-  const readings = async (count = 55, speed = 0) => {
+  const readings = async (count = 55, speed = 0, pose = neutral, interval = 20) => {
     for (let i = 0; i < count; i++) {
-      await advance(20);
-      fire(win, 'deviceorientation', neutral);
+      await advance(interval);
+      fire(win, 'deviceorientation', typeof pose === 'function' ? pose(i) : pose);
       fire(win, 'devicemotion', { rotationRate: { alpha: 0, beta: speed, gamma: 0 } });
     }
   };
@@ -194,11 +197,11 @@ test('phone asks BOTH iOS permissions on Start, calibrates, and sends only compl
   e.fire(e.elements.start, 'click');
   assert.deepEqual(e.permissions, ['DeviceMotionEvent', 'DeviceOrientationEvent']);
   await e.settle(); await e.readings();
-  assert.deepEqual(socket.packets.at(-1), { type: 'ready', ready: true });
+  assert.deepEqual(socket.packets.filter(p => p.type === 'ready').at(-1), { type: 'ready', ready: true });
   await e.readings(15, 360);
   const shots = socket.packets.filter(p => p.type === 'swing');
   assert.equal(shots.length, 1);
-  assert.deepEqual(Object.keys(shots[0]).sort(), ['aim', 'id', 'lob', 'power', 'spin', 'type']);
+  assert.deepEqual(Object.keys(shots[0]).sort(), ['aim', 'id', 'lob', 'power', 'spin', 'topspin', 'type']);
   assert.ok(shots[0].id.length > 0);
   assert.equal(new URL(socket.url).pathname, '/arena/api/rooms/abc/ws');
   assert.equal(new URL(socket.url).searchParams.get('role'), 'p1');
@@ -223,7 +226,7 @@ test('sensor readiness survives reconnect but hidden and stale sensors pause the
   const e = environment(); e.sockets[0].open(); e.fire(e.elements.start, 'click');
   await e.settle(); await e.readings();
   e.sockets[0].close(); await e.advance(600); e.sockets[1].open();
-  assert.deepEqual(e.sockets[1].packets.at(-1), { type: 'ready', ready: true });
+  assert.deepEqual(e.sockets[1].packets.filter(p => p.type === 'ready').at(-1), { type: 'ready', ready: true });
   e.doc.hidden = true; e.fire(e.doc, 'visibilitychange'); await e.settle();
   assert.deepEqual(e.sockets[1].packets.at(-1), { type: 'ready', ready: false });
   assert.equal(e.wakes.every(lock => lock.released), true);
@@ -233,7 +236,7 @@ test('sensor readiness survives reconnect but hidden and stale sensors pause the
   e.sockets.at(-1).open();
   assert.deepEqual(e.sockets.at(-1).packets.at(-1), { type: 'ready', ready: false });
   await e.readings(12);
-  assert.deepEqual(e.sockets.at(-1).packets.at(-1), { type: 'ready', ready: true });
+  assert.deepEqual(e.sockets.at(-1).packets.filter(p => p.type === 'ready').at(-1), { type: 'ready', ready: true });
   await e.advance(6000);
   assert.deepEqual(e.sockets.at(-1).packets.at(-1), { type: 'ready', ready: false });
   assert.match(e.elements['status-detail'].textContent, /leitura/i);
@@ -273,4 +276,66 @@ test('steady sensor samples do not repeatedly announce unchanged status to scree
   const before = e.elements['status-detail'].textWrites;
   await e.readings(30);
   assert.equal(e.elements['status-detail'].textWrites, before);
+});
+
+
+test('pose wire traffic is calibrated, host-gated, throttled, private and resent on reconnect', async () => {
+  const e = environment(); const socket = e.sockets[0]; socket.open();
+  const poses = s => s.packets.filter(p => p.type === 'pose');
+  await e.readings(5);
+  assert.equal(poses(socket).length, 0);
+  e.fire(e.elements.start, 'click'); await e.settle();
+  socket.message({ type: 'presence', host: false });
+  await e.readings();
+  assert.equal(poses(socket).length, 0);
+  socket.message({ type: 'presence', host: true });
+  await e.readings(1);
+  assert.equal(poses(socket).length, 1);
+  assert.deepEqual(Object.keys(poses(socket)[0]).sort(), ['q', 'type']);
+  assert.ok(Math.abs(Math.hypot(...poses(socket)[0].q) - 1) < 1e-6);
+  let before = poses(socket).length;
+  // The host presence already sent at t=1200; the first reading is t=1220.
+  // Stay strictly before t=2200, then test that exact one-second boundary.
+  await e.readings(48);
+  assert.equal(poses(socket).length, before, 'idle sends at most once per second');
+  await e.readings(1);
+  assert.equal(poses(socket).length, before + 1);
+  before = poses(socket).length;
+  await e.readings(100, 0, i => ({ ...neutral, alpha: (359 + i * 2) % 360 }), 10);
+  assert.ok(poses(socket).length - before >= 10, 'meaningful movement is streamed');
+  assert.ok(poses(socket).length - before <= 15, 'maximum 15 Hz');
+  const poseTimes = socket.sentAt.filter((_, i) => socket.packets[i].type === 'pose');
+  for (let i = 1; i < poseTimes.length; i++) {
+    assert.ok(poseTimes[i] - poseTimes[i - 1] >= 1000 / 15, 'individual intervals respect 15 Hz');
+  }
+  socket.close(); await e.advance(600); e.sockets[1].open();
+  assert.equal(poses(e.sockets[1]).length, 1, 'same pose resent on host reconnect');
+  e.doc.hidden = true; e.fire(e.doc, 'visibilitychange');
+  before = poses(e.sockets[1]).length;
+  await e.readings();
+  assert.equal(poses(e.sockets[1]).length, before);
+});
+
+test('subthreshold pose noise stays idle and accessible mode sends topspin zero without poses', async () => {
+  const e = environment(); const socket = e.sockets[0]; socket.open();
+  e.fire(e.elements.start, 'click'); await e.settle(); await e.readings();
+  const count = () => socket.packets.filter(p => p.type === 'pose').length;
+  const before = count();
+  await e.readings(30, 0, i => ({ ...neutral, gamma: neutral.gamma + (i % 2 ? 0.3 : -0.3) }));
+  assert.equal(count(), before);
+  e.fire(e.elements['manual-mode'], 'click'); await e.settle();
+  const manualBefore = count();
+  e.fire(e.elements['manual-shot'], 'click');
+  const shot = socket.packets.filter(p => p.type === 'swing').at(-1);
+  assert.equal(shot.topspin, 0);
+  await e.readings(100, 360);
+  assert.equal(count(), manualBefore);
+});
+
+test('gesture feedback describes detection until a server hit arrives', async () => {
+  const e = environment(); e.sockets[0].open();
+  e.fire(e.elements.start, 'click'); await e.settle(); await e.readings();
+  await e.readings(15, 360);
+  assert.match(e.elements.feedback.textContent, /gesto/i);
+  assert.doesNotMatch(e.elements.feedback.textContent, /acertou|ponto|boa rebatida/i);
 });

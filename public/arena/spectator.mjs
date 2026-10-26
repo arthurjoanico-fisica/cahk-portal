@@ -19,7 +19,7 @@ if(room&&/^[a-f0-9]{32}$/.test(room)&&'BroadcastChannel'in window){
 function frame(now){
   if(lastFrame){const g=lastFrame.game,stale=now-lastReceived>3500;
     $('game-call').textContent=stale?'SINAL INTERROMPIDO\nVerifique a janela da partida':g.paused?'PARTIDA PAUSADA':g.phase==='finished'?'FIM DE JOGO':g.phase==='point'?'PONTO!':'';
-    if(!document.hidden&&now-lastPaint>1000/(g.paused?8:30)){scene?.draw(g,now/1000,{layout:'overview',overview:false});lastPaint=now;}
+    if(!document.hidden&&now-lastPaint>1000/(g.paused?8:30)){scene?.draw(g,now/1000,{layout:'overview',overview:false,poses:lastFrame.poses});lastPaint=now;}
   }else if(scene)$('game-call').textContent='AGUARDANDO A PARTIDA\nMantenha a janela principal aberta';
   requestAnimationFrame(frame);
 }requestAnimationFrame(frame);

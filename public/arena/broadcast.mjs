@@ -1,7 +1,8 @@
 const phases=['serve','rally','point','finished'];
 export const spectatorChannel=room=>'cahk-arena-local-view-v1:'+room;
-export function spectatorSnapshot(game,mode,at=Date.now()){
-  return {type:'frame',version:1,at,mode,game:{
+const validPose=q=>q===null||(Array.isArray(q)&&q.length===4&&q.every(Number.isFinite)&&Math.abs(Math.hypot(...q)-1)<.02);
+export function spectatorSnapshot(game,mode,at=Date.now(),poses=[null,null]){
+  return {type:'frame',version:1,at,mode,poses:poses.map(q=>q?[...q]:null),game:{
     names:game.names.map(n=>String(n).slice(0,28)),scores:[...game.scores],
     players:game.players.map(p=>({x:p.x,z:p.z,pose:p.pose})),
     ball:{x:game.ball.x,y:game.ball.y,z:game.ball.z},phase:game.phase,
@@ -11,6 +12,7 @@ export function spectatorSnapshot(game,mode,at=Date.now()){
 export function validSpectatorSnapshot(s){
   const g=s?.game;
   return s?.type==='frame'&&s.version===1&&Number.isFinite(s.at)&&
+    (s.poses===undefined||(Array.isArray(s.poses)&&s.poses.length===2&&s.poses.every(validPose)))&&
     ['quick','training','tournament'].includes(s.mode)&&phases.includes(g?.phase)&&
     Array.isArray(g.names)&&g.names.length===2&&g.names.every(n=>typeof n==='string'&&n.length<=28)&&
     Array.isArray(g.scores)&&g.scores.length===2&&g.scores.every(n=>Number.isInteger(n)&&n>=0&&n<=15)&&

@@ -300,3 +300,19 @@ test('host receives a persistence acknowledgement only after saving checkpoint',
  const ack=await host.next(m=>m.type==='checkpoint-saved');assert.equal(ack.savedAt,12345);host.socket.close();
 });
 test('room creation quota bounds each network and total daily allocation',()=>{assert.equal(typeof backend.consumeRoomQuota,'function');const state={};for(let i=0;i<6;i++)assert.equal(backend.consumeRoomQuota(state,1000,'a'),true);assert.equal(backend.consumeRoomQuota(state,1000,'a'),false);assert.equal(backend.consumeRoomQuota(state,62000,'a'),true);const all={};for(let i=0;i<120;i++)assert.equal(backend.consumeRoomQuota(all,1000,'ip'+i),true);assert.equal(backend.consumeRoomQuota(all,1000,'another'),false);assert.equal(backend.consumeRoomQuota(all,86401000,'another'),true);});
+
+test('live racket poses are bounded normalized quaternions and remain phone-only',()=>{
+ assert.deepEqual(backend.validateMessage('p1',{type:'pose',q:[0,0,0,1],player:1}),{type:'pose',q:[0,0,0,1]});
+ for(const q of [[0,0,0,0],[0,0,0,2],[NaN,0,0,1],[0,0,1],['0',0,0,1]])assert.throws(()=>backend.validateMessage('p1',{type:'pose',q}));
+ assert.throws(()=>backend.validateMessage('host',{type:'pose',q:[0,0,0,1]}));
+ assert.deepEqual(backend.validateMessage('p2',{...shot,topspin:-.7}),{...shot,topspin:-.7});
+ assert.throws(()=>backend.validateMessage('p1',{...shot,topspin:2}));
+});
+test('poses relay only when ready, enforce side and do not enter restored checkpoint',async()=>{
+ const room=await create(),host=await connect(room.room,'host',room.hostToken),phone=await connect(room.room,'p2',room.padTokens[1]);
+ phone.send({type:'pose',q:[0,0,0,1]});await barrier(phone);assert.equal(host.messages.filter(m=>m.type==='pose').length,0);
+ phone.send({type:'ready',ready:true});await host.next(m=>m.type==='presence'&&m.ready[1]);
+ phone.send({type:'pose',q:[0,.6,0,.8],player:0});assert.deepEqual(await host.next(m=>m.type==='pose'),{type:'pose',q:[0,.6,0,.8],player:1});
+ host.send({type:'checkpoint',state:{version:1,scores:[2,3]}});await host.next(m=>m.type==='checkpoint-saved');
+ host.socket.close();const restored=await connect(room.room,'host',room.hostToken);assert.deepEqual((await restored.next(m=>m.type==='restore')).state,{version:1,scores:[2,3]});phone.socket.close();restored.socket.close();
+});

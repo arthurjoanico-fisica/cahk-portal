@@ -9,6 +9,8 @@ de uma publicação bem-sucedida no Worker `cahk-portal`.
 - Visão em primeira pessoa em tela dividida, com visão geral em miniatura.
 - Telão extra local: uma janela somente de leitura no mesmo navegador/computador.
 - Deslocamento automático, sem câmera, com controles por movimento.
+- Raquete com orientação 3D contínua, braço virtual, potência por arco/velocidade,
+  corte lateral e topspin/backspin calculados pela trajetória.
 - Duelo, treino contra bot e campeonato eliminatório com 4 a 16 participantes.
 - Dois QR codes independentes, calibração, reconexão e pausa após desconexão.
 - Backup local e checkpoint de placar/chave no Cloudflare, sem gravar sensores.
@@ -51,7 +53,8 @@ Em CI, armazene autenticação apenas nos segredos da plataforma, nunca no Git.
 2. Escolha Duelo ou Campeonato e preencha nomes.
 3. Prepare a quadra; cada jogador escaneia seu próprio QR code.
 4. Nos celulares, toque em Iniciar, permita movimento/orientação e segure parado
-   na posição de jogo até concluir a calibração.
+   como o cabo de uma raquete, com a tela voltada para você e a borda superior
+   apontando para cima, até concluir a calibração.
 5. Quando os dois controles estiverem prontos, inicie pela tela compartilhada.
 6. Se alguém sair da página ou perder conexão, a partida pausa. Depois de
    reconectar, retome pela tela. Use `C` para pedir recalibração, Espaço para
@@ -68,12 +71,31 @@ permite verificar conexões antes de testar gestos. Para competição, defina o
 mesmo modo e sensibilidade para todos. Em iPhone/Android, abra o link no navegador
 completo. Para sensores em aparelhos reais, o site precisa estar em HTTPS.
 
+## Jogar com a raquete
+
+A raquete acompanha rotações em três eixos. O arco e a velocidade definem a
+força; o caminho do gesto e a face influenciam a direção. Um giro do punho gera
+corte lateral; a escovada vertical produz topspin/backspin. Abrir a face e
+levantar o movimento favorece o lob. Segure a calibração por 0,7 s para recentrar
+se a orientação derivar. O indicador “Gesto enviado” confirma a detecção;
+“Boa rebatida! Acertou.” depende de a bola estar ao alcance no jogo.
+
+Sem câmera, não há posição absoluta da mão: um braço virtual transforma
+rotações em alcance visual. A física é uma aproximação para o jogo, não uma
+simulação medida da mão ou uma reprodução idêntica de outro produto.
+
 ## Persistência, custo e limites
 
 A física e os gráficos são calculados pela tela. Cada celular envia apenas
-gestos reconhecidos e mensagens de prontidão; não transmite sensores a 60 Hz.
+gestos reconhecidos, prontidão e orientação relativa da raquete: até 15 poses/s
+quando há movimento, no máximo 1/s em repouso. Não transmite amostras brutas
+dos sensores. As poses são transitórias e não entram no checkpoint.
 O Durable Object usa WebSocket Hibernation e grava apenas checkpoints, evitando
-uma gravação por frame. A criação é limitada a 6 salas por minuto e 24 por hora por rede, com teto global de 120 salas por dia. Retomar uma sala não consome uma nova criação. A sala expira em 24 horas. Uma sessão expirada pode ser
+uma gravação por frame. A orientação ao vivo aumenta o tráfego WebSocket
+comparado à versão que enviava somente rebatidas: dois controles ativos
+enviam até 30 poses/s, cerca de 108 mil mensagens por hora antes dos demais
+eventos. Mensagens não equivalem diretamente a unidades faturadas; consulte
+as métricas e regras da conta Cloudflare. A criação é limitada a 6 salas por minuto e 24 por hora por rede, com teto global de 120 salas por dia. Retomar uma sala não consome uma nova criação. A sala expira em 24 horas. Uma sessão expirada pode ser
 recriada preservando o backup deste computador; será necessário escanear novos
 QR codes. Limpar dados do navegador remove esse backup e as credenciais locais.
 
