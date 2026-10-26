@@ -1,9 +1,16 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "cahk-portal",
+  "main": "worker/index.mjs",
   "compatibility_date": "2026-09-11",
   "assets": {
+    "binding": "ASSETS",
+    "run_worker_first": ["/arena/api/*"],
     "directory": "./public",
     "html_handling": "auto-trailing-slash"
-  }
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ARENA_ROOMS", "class_name": "ArenaRoom" }]
+  },
+  "migrations": [{ "tag": "arena-v1", "new_sqlite_classes": ["ArenaRoom"] }]
 }

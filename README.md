@@ -25,3 +25,8 @@ Principais módulos:
 O backend Supabase correspondente já foi preparado.
 
 Build esperado: CAHK Portal build 6.0-sistema-completo
+
+
+## Arena CAHK
+
+Jogo com dois celulares e tela única em `/arena/`. Publicação e uso: [ARENA-PUBLICACAO.md](ARENA-PUBLICACAO.md).

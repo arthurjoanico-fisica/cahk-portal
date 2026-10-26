@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#120c22">
+  <meta name="referrer" content="no-referrer">
+  <title>Seu controle · Arena CAHK</title>
+  <link rel="stylesheet" href="./pad.css">
+  <script type="module" src="./pad.mjs"></script>
+</head>
+<body>
+  <main class="controller">
+    <header class="topbar">
+      <a class="brand" href="/arena/" aria-label="Arena CAHK">CAHK<span>ARENA / CONTROLE</span></a>
+      <div id="connection" class="connection" data-state="offline"><i aria-hidden="true"></i><span id="connection-text" role="status">Conectando à sala</span></div>
+    </header>
+
+    <section class="identity" aria-label="Seu jogador">
+      <div class="identity-copy"><span class="eyebrow">A QUADRA ESTÁ NA TELA.</span><h1>A raquete<br>está na sua mão<span>.</span></h1><span id="player-name" class="player-tag">JOGADOR 1</span></div>
+      <div id="player-number" class="player-number" aria-hidden="true">01</div>
+    </section>
+
+    <section class="play-card" aria-labelledby="status-title">
+      <div class="card-top"><span id="mode-label" class="eyebrow">Controle por movimento</span><span class="live-mark" aria-hidden="true">↗</span></div>
+      <div class="racket-stage" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="racket"><div class="racket-face"></div><div class="racket-handle"></div></div><span class="motion-trail"></span><span class="court-dot"></span></div>
+      <div class="status-copy"><h2 id="status-title">Sua próxima jogada começa aqui.</h2><p id="status-detail" role="status" aria-live="polite">Toque em iniciar para preparar seu controle.</p></div>
+      <progress id="calibration-progress" max="1" value="0" aria-label="Calibração da posição neutra" hidden></progress>
+      <button id="start" class="primary" type="button">Iniciar controle <span aria-hidden="true">↗</span></button>
+      <p id="feedback" class="feedback" role="status" aria-live="polite" data-active="false">Seu ritmo. Sua jogada.</p>
+
+      <div id="manual-controls" class="manual-controls" hidden>
+        <label for="manual-aim">Direção da rebatida</label>
+        <div class="range-labels"><span>Esquerda</span><span>Direita</span></div>
+        <input id="manual-aim" type="range" min="-1" max="1" step="0.1" value="0" aria-label="Direção da rebatida manual">
+        <label class="check"><input id="manual-lob" type="checkbox"> Rebatida alta (lob)</label>
+        <button id="manual-shot" class="primary manual-shot" type="button" disabled>Rebater <span aria-hidden="true">↗</span></button>
+        <p class="microcopy">Modo acessível: botão manual, sem controle por sensores.</p>
+      </div>
+    </section>
+
+    <section class="tuning" aria-label="Ajustes do controle">
+      <div class="sensitivity-heading"><label for="sensitivity">Sensibilidade</label><output id="sensitivity-value" for="sensitivity">1,0×</output></div>
+      <input id="sensitivity" type="range" min="0.6" max="1.6" step="0.1" value="1" aria-describedby="sensitivity-hint">
+      <div id="sensitivity-hint" class="range-labels"><span>Giro mais firme</span><span>Giro mais leve</span></div>
+      <button id="calibrate" class="recalibrate" type="button" disabled aria-describedby="hold-hint"><span aria-hidden="true">⌾</span> Recentralizar <span id="hold-hint">segure 0,7 s</span></button>
+    </section>
+
+    <aside class="tips"><span aria-hidden="true">↗</span><p>Segure firme. Faça movimentos curtos e mantenha espaço livre ao redor.</p></aside>
+    <button id="manual-mode" class="accessible" type="button">Prefiro jogar por toque <span>Modo acessível ↗</span></button>
+    <footer><span id="wake-note">Mantenha esta página aberta durante o jogo.</span><span class="privacy">Movimentos processados no celular · sem câmera</span></footer>
+  </main>
+</body>
+</html>
