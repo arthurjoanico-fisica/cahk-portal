@@ -2,9 +2,14 @@ import {createGame,stepGame,swing,restoreGame} from './engine.mjs';
 import {createTournament,nextMatch,completeMatch} from './tournament.mjs';
 import {createScene} from './scene.mjs';
 import {newestCheckpoint,LinkWatch} from './session.mjs';
+import {spectatorChannel,spectatorSnapshot} from './broadcast.mjs';
+import {playerRelativeShot} from './viewports.mjs';
 import QR from './vendor/qrcode.mjs';
+
+export function startArena(){
 const $=id=>document.getElementById(id),KEY='cahk-arena-session-v1',BACKUP='cahk-arena-checkpoint-v1';
 let mode='quick',session=null,ws=null,presence={host:false,pads:[false,false],ready:[false,false]},game=null,tournament=null,matchId=null,scene=null,running=false,manualPause=false,serverReady=false,reconnectTimer=null,leaving=false,finishedHandled=false,last=0,accumulator=0,botAt=0,toastTimer=null,sound=false,audio=null,recovering=false,heartbeat=null;
+let view='players',localScreen=null,broadcastAt=0,localPulse=null,lastPaint=0;
 const read=key=>{try{return JSON.parse(localStorage.getItem(key));}catch{return null;}};
 const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{notify('O navegador bloqueou o backup local. Mantenha esta aba aberta.');}};
 const send=m=>{if(ws?.readyState===1)ws.send(JSON.stringify(m));};
@@ -24,7 +29,7 @@ function refreshPresence(){
   if(game?.paused&&canPlay())$('game-call').textContent='CONTROLES PRONTOS\nToque em Retomar';
   $('pause').textContent=game?.paused?'Retomar':'Pausar';
 }
-function checkpoint(){if(!game)return;const state={version:1,mode,game,tournament,matchId,savedAt:Date.now()};write(BACKUP,state);send({type:'checkpoint',state});$('save-status').textContent=ws?.readyState===1?'Salvando placar…':'Backup neste computador';}
+function checkpoint(){if(!game)return;const state={version:1,mode,game,tournament,matchId,savedAt:Date.now()};write(BACKUP,state);send({type:'checkpoint',state});publishLocalFrame();$('save-status').textContent=ws?.readyState===1?'Salvando placar…':'Backup neste computador';}
 function restore(state){
   if(!state||state.version!==1||!['quick','training','tournament'].includes(state.mode))return false;
   try{const restored=restoreGame(state.game);if(state.mode==='tournament'){
@@ -48,7 +53,7 @@ function openHost(){
       refreshPresence();
     }
     else if(m.type==='swing'&&game&&running&&canPlay()){
-      const didHit=swing(game,m.player,m);if(didHit){tone(360+m.power*300);send({type:'feedback',player:m.player,event:'hit',power:m.power});}else if(!game.paused)notify('Rebata quando a bola estiver ao alcance do seu personagem.');
+      const didHit=swing(game,m.player,playerRelativeShot(m,m.player));if(didHit){tone(360+m.power*300);send({type:'feedback',player:m.player,event:'hit',power:m.power});}else if(!game.paused)notify('Rebata quando a bola estiver ao alcance do seu personagem.');
     }
     else if(m.type==='checkpoint-saved'||m.type==='saved')$('save-status').textContent='Placar salvo na sala e neste computador';
     else if(m.type==='error')notify(m.message||'Não foi possível atualizar a sala.');
@@ -66,7 +71,25 @@ function showCourt(){
   $('home').hidden=true;$('court-view').hidden=false;
   try{scene??=createScene($('court'));}catch(e){notify('A renderização 3D não iniciou. Ative a aceleração gráfica do navegador.');$('game-call').textContent='Não foi possível abrir a quadra 3D.';return;}
   $('bracket-button').hidden=mode!=='tournament';drawPairing();
+  connectLocalScreen();
 }
+function publishLocalFrame(){if(localScreen&&game)localScreen.postMessage(spectatorSnapshot(game,mode));}
+function connectLocalScreen(){
+  if(!session||!('BroadcastChannel'in window))return;
+  const name=spectatorChannel(session.room);if(localScreen?.name===name)return;
+  localScreen?.close();clearInterval(localPulse);localScreen=new BroadcastChannel(name);
+  localScreen.onmessage=event=>{if(event.data?.type==='hello')publishLocalFrame();};
+  // Background tabs suspend animation frames. Paused state stays alive locally.
+  localPulse=setInterval(()=>{if(game?.paused||document.hidden)publishLocalFrame();},1000);
+}
+$('view-toggle').onclick=()=>{view=view==='players'?'overview':'players';$('view-toggle').textContent=view==='players'?'Visão geral':'Visão do jogador';$('view-toggle').setAttribute('aria-pressed',String(view==='overview'));};
+$('open-spectator').onclick=()=>{
+  if(!session)return;if(!('BroadcastChannel'in window)){notify('Este navegador não suporta o telão local. Use um navegador atualizado.');return;}
+  const url=`/arena/?spectator=1#room=${encodeURIComponent(session.room)}`;
+  // No host or phone token is ever put into the spectator URL or channel.
+  const extra=window.open(url,'cahk-arena-local-screen','popup,width=1280,height=850');
+  if(!extra)notify('Permita a abertura da janela do telão neste navegador.');
+};
 function newGame(){
   let names=[$('name1').value.trim()||'Jogador 1',mode==='training'?'Kremer Bot':$('name2').value.trim()||'Jogador 2'],target=11;
   if(mode==='tournament'){
@@ -102,8 +125,9 @@ document.querySelectorAll('.close-dialog').forEach(b=>b.onclick=()=>b.closest('d
 for(let i=0;i<2;i++)$('copy'+(i+1)).onclick=async()=>{try{await navigator.clipboard.writeText(padLink(i));notify('Link copiado. Envie somente ao jogador correspondente.');}catch{notify('Não foi possível copiar. Escaneie o QR code na tela.');}};
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.body.requestFullscreen();}catch{notify('Use a opção de tela cheia do navegador.');}};
 $('sound').onclick=()=>{sound=!sound;$('sound').textContent=`Som: ${sound?'on':'off'}`;$('sound').setAttribute('aria-pressed',String(sound));$('sound').setAttribute('aria-label',sound?'Desativar som':'Ativar som');tone(550);};
-$('leave').onclick=()=>{if(game?.phase==='rally'&&!confirm('Pausar e voltar ao início? O placar ficará salvo.'))return;if(game){game.paused=true;manualPause=true;checkpoint();}leaving=true;clearTimeout(reconnectTimer);ws?.close();$('court-view').hidden=true;$('home').hidden=false;$('resume').hidden=false;game=null;running=false;};
+$('leave').onclick=()=>{if(game?.phase==='rally'&&!confirm('Pausar e voltar ao início? O placar ficará salvo.'))return;if(game){game.paused=true;manualPause=true;checkpoint();}clearInterval(localPulse);localScreen?.close();localScreen=null;leaving=true;clearTimeout(reconnectTimer);ws?.close();$('court-view').hidden=true;$('home').hidden=false;$('resume').hidden=false;game=null;running=false;};
 function drawHud(){if(!game)return;$('show-result').hidden=game.phase!=='finished';for(let i=0;i<2;i++){$('player'+(i+1)).textContent=game.names[i];$('score'+(i+1)).textContent=game.scores[i];}
+ $('view-player1').textContent=`01 · ${game.names[0]}`;$('view-player2').textContent=`02 · ${game.names[1]}`;
  $('match-label').textContent=mode==='tournament'?`${game.target===11?'FINAL':'CAMPEONATO'} · ATÉ ${game.target}`:mode==='training'?'TREINO CAHK':`DUELO · ATÉ ${game.target}`;
  $('rally').textContent=game.rally?`RALLY ${game.rally}`:'PREPARE SUA RAQUETE';
 }
@@ -123,7 +147,8 @@ function renderBracket(){
 $('bracket-button').onclick=()=>{if(game&&running){game.paused=true;manualPause=true;checkpoint();refreshPresence();}renderBracket();$('bracket-dialog').showModal();};
 $('export').onclick=()=>{const b=new Blob([JSON.stringify({tournament,game,savedAt:new Date().toISOString()},null,2)],{type:'application/json'});const url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download='campeonato-cahk.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&game&&running){game.paused=true;manualPause=true;checkpoint();refreshPresence();}});
-window.addEventListener('pagehide',()=>{if(game){game.paused=true;write(BACKUP,{version:1,mode,game,tournament,matchId,savedAt:Date.now()});}});
+window.addEventListener('pagehide',()=>{if(game){game.paused=true;write(BACKUP,{version:1,mode,game,tournament,matchId,savedAt:Date.now()});publishLocalFrame();}clearInterval(localPulse);localScreen?.close();localScreen=null;});
+window.addEventListener('pageshow',event=>{if(event.persisted&&game&&session)connectLocalScreen();});
 window.addEventListener('keydown',e=>{if(e.target.matches('input,textarea'))return;if(e.code==='Space'){e.preventDefault();$('pause').click();}if(e.key.toLowerCase()==='f')$('fullscreen').click();if(e.key.toLowerCase()==='c'){send({type:'calibrate',player:0});if(mode!=='training')send({type:'calibrate',player:1});}});
 function frame(now){
  const dt=last?Math.min((now-last)/1000,.1):0;last=now;
@@ -134,7 +159,8 @@ function frame(now){
      if(game.phase==='serve'&&game.serving===1&&game.timer>1.2||game.phase==='rally'&&game.lastHit===0&&Math.abs(b.z-p.z)<1.05&&Math.abs(b.x-p.x)<1){swing(game,1,{power:.45,aim:Math.sin(now*.0009)*.75,lob:.2});botAt=now+400;}
    }
    if(game.event){const ev=game.event;game.event=null;if(ev.type==='point'){checkpoint();send({type:'feedback',player:ev.player,event:'point',power:1});tone(550,.15);}else if(ev.type==='bounce')tone(200,.035);}
-   drawHud();if(scene&&!$('court-view').hidden)scene.draw(game,now/1000);
+   drawHud();if(scene&&!$('court-view').hidden&&!document.hidden&&now-lastPaint>1000/(game.paused?10:60)){scene.draw(game,now/1000,{layout:view==='overview'?'overview':mode==='training'?'player':'split',overview:true});lastPaint=now;}
+   if(localScreen&&!game.paused&&now-broadcastAt>1000/12){publishLocalFrame();broadcastAt=now;}
    if(game.phase==='finished'&&!finishedHandled)handleFinish();
    if(!game.paused&&running){$('game-call').textContent=game.phase==='serve'?`${game.names[game.serving]}\nFaça o movimento para sacar`:game.phase==='point'?'PONTO!':'';}
    if(game.paused&&!running&&game.phase!=='finished')$('game-call').textContent='CONECTEM OS CELULARES';
@@ -143,3 +169,5 @@ function frame(now){
 }
 requestAnimationFrame(frame);
 // Test automation can observe behavior through DOM and actual sockets; no privileged debug API.
+
+}

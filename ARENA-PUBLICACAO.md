@@ -6,6 +6,8 @@ de uma publicação bem-sucedida no Worker `cahk-portal`.
 ## O que esta versão entrega
 
 - Quadra 3D própria, dois jogadores, uma tela e dois celulares.
+- Visão em primeira pessoa em tela dividida, com visão geral em miniatura.
+- Telão extra local: uma janela somente de leitura no mesmo navegador/computador.
 - Deslocamento automático, sem câmera, com controles por movimento.
 - Duelo, treino contra bot e campeonato eliminatório com 4 a 16 participantes.
 - Dois QR codes independentes, calibração, reconexão e pausa após desconexão.
@@ -56,6 +58,10 @@ Em CI, armazene autenticação apenas nos segredos da plataforma, nunca no Git.
    pausa e `F` para tela cheia.
 7. No fim de cada partida do campeonato, prepare a próxima. Consulte a chave
    e exporte o JSON de resultados ao terminar.
+8. Use **Visão geral** para alternar o enquadramento ou **Abrir telão extra**
+   para abrir a visão de transmissão. Mova essa janela para outro monitor do
+   mesmo computador. Mantenha a janela da partida aberta e visível. O telão
+   não é um link para espectadores remotos em outro aparelho.
 
 O modo acessível por toque é uma alternativa explícita no celular e também
 permite verificar conexões antes de testar gestos. Para competição, defina o
@@ -74,6 +80,12 @@ QR codes. Limpar dados do navegador remove esse backup e as credenciais locais.
 Durable Objects SQLite são compatíveis com o Workers Free, sujeito às quotas
 atuais da conta. Isso não equivale a promessa de uso ilimitado. Não há chamadas
 novas ao Supabase nesta funcionalidade.
+
+A tela dividida e a miniatura renderizam a mesma partida por câmeras diferentes,
+sem criar outra sala. O telão usa BroadcastChannel local, com no máximo 12
+snapshots por segundo (1 por segundo em pausa), e não abre conexão adicional
+com Cloudflare ou Supabase. Há um custo adicional de renderização na máquina.
+Gráficos e bibliotecas continuam sendo arquivos estáticos do Cloudflare.
 
 ## Validação desta entrega
 
