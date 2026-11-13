@@ -1,0 +1,49 @@
+DAEX — AJUSTE DE IMPRESSÃO 60%
+================================
+
+OBJETIVO
+--------
+Corrigir o corte dos vales ao usar papel estreito de máquina de cartão
+encostado à esquerda em uma impressora térmica maior.
+
+COMO ATUALIZAR
+--------------
+No repositório cahk-portal, substitua somente:
+
+public/daex/
+
+pela pasta public/daex/ deste pacote.
+
+NOVO PERFIL PADRÃO
+------------------
+Perfil de impressão:
+"Papel de cartão — 60% / esquerda"
+
+Configuração:
+- página lógica: 80 mm
+- escala visual aproximada: 60%
+- largura do vale: 45,6 mm
+- margem esquerda: 0,6 mm
+- alinhamento: esquerda
+- fonte, espaçamento, borda e altura também reduzidos
+
+Esse perfil foi feito para o cenário em que o rolo estreito fica
+encostado à esquerda da impressora.
+
+PERFIS ALTERNATIVOS
+-------------------
+No menu lateral continuam disponíveis:
+- Papel de cartão — 60% / esquerda
+- 58 mm normal
+- 80 mm normal
+
+Se você voltar a usar o rolo correto da impressora, basta trocar o perfil.
+
+IMPORTANTE NO DIÁLOGO DE IMPRESSÃO
+----------------------------------
+Deixe a escala do navegador/sistema em 100% quando usar o perfil
+"Papel de cartão — 60% / esquerda", porque a redução já é feita
+pelo próprio DAEX.
+
+Se o navegador estiver aplicando "Ajustar à página", prefira 100% /
+Tamanho real para não reduzir duas vezes.

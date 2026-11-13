@@ -1,6 +1,7 @@
 import { getValidSession, signOut } from './auth.js';
 import * as api from './api.js';
 import { cartTotals, financialSummary, distributeProfit, expandPhysicalTickets, csvEscape } from './logic.js';
+import { getPrintProfile } from './print-config.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -91,7 +92,7 @@ async function bootstrap() {
 
   $('#user-name').textContent = state.profile.nome;
   $('#user-role').textContent = roleLabel(state.profile.role);
-  $('#printer-width').value = localStorage.getItem('daex-printer-width') || '58';
+  $('#printer-profile').value = localStorage.getItem('daex-print-profile') || 'card60';
 
   applyRoleVisibility();
   await loadBaseData();
@@ -469,8 +470,7 @@ async function syncPendingSales() {
 
 function ticketPrintDocument(tickets) {
   const ev = selectedEvent();
-  const width = Number(localStorage.getItem('daex-printer-width') || '58');
-  const printableWidth = Math.max(40, width - 4);
+  const profile = getPrintProfile(localStorage.getItem('daex-print-profile') || 'card60');
   const cards = tickets.map(t => `
     <section class="ticket">
       <div class="logo">DAEX</div>
@@ -482,12 +482,17 @@ function ticketPrintDocument(tickets) {
     </section>`).join('');
 
   return `<!doctype html><html><head><meta charset="utf-8"><title>Vales DAEX</title><style>
-    @page{size:${width}mm auto;margin:2mm}
-    *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;color:#000;background:#fff}
-    .ticket{width:${printableWidth}mm;min-height:42mm;text-align:center;padding:4mm 2mm;border:2px solid #000;border-radius:2mm;margin:0 0 2mm;page-break-after:always;display:flex;flex-direction:column;align-items:center;justify-content:center}
-    .logo{font-size:16px;font-weight:900;letter-spacing:2px}.event{font-size:9px;margin-top:1mm}
-    h1{font-size:${width <= 58 ? 24 : 30}px;line-height:1.05;margin:4mm 0;font-weight:900;text-transform:uppercase}
-    .date{font-size:10px}.serial{font-size:9px;margin:2mm 0}.ticket>strong{font-size:10px;margin-top:2mm;border-top:1px dashed #000;padding-top:2mm;width:100%}
+    @page{size:${profile.pageWidthMm}mm auto;margin:0}
+    *{box-sizing:border-box}
+    html,body{margin:0!important;padding:0!important;width:${profile.pageWidthMm}mm;background:#fff;color:#000}
+    body{font-family:Arial,sans-serif;text-align:left}
+    .ticket{width:${profile.ticketWidthMm}mm;min-height:${profile.minHeightMm}mm;text-align:center;padding:${profile.paddingYmm}mm ${profile.paddingXmm}mm;border:1px solid #000;border-radius:1mm;margin:0 0 ${profile.marginBottomMm}mm ${profile.marginLeftMm}mm;page-break-after:always;break-after:page;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+    .logo{font-size:${profile.logoPx}px;font-weight:900;letter-spacing:1px}
+    .event{font-size:${profile.eventPx}px;margin-top:.6mm;max-width:100%;overflow-wrap:anywhere}
+    h1{font-size:${profile.headingPx}px;line-height:1;margin:2.2mm 0;font-weight:900;text-transform:uppercase;max-width:100%;overflow-wrap:anywhere}
+    .date{font-size:${profile.datePx}px}
+    .serial{font-size:${profile.serialPx}px;margin:1mm 0}
+    .ticket>strong{font-size:${profile.footerPx}px;margin-top:1.2mm;border-top:1px dashed #000;padding-top:1.2mm;width:100%;line-height:1.15}
   </style></head><body>${cards}<script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`;
 }
 
@@ -529,7 +534,7 @@ function bindEvents() {
   window.addEventListener('hashchange', () => goRoute((location.hash || '#overview').slice(1)));
   $('#event-select').addEventListener('change', async e => { state.selectedEventId = e.target.value; localStorage.setItem('daex-selected-event', state.selectedEventId); state.cart.clear(); await loadEventData(); });
   $('#logout').addEventListener('click', () => { signOut(); location.replace('./'); });
-  $('#printer-width').addEventListener('change', e => localStorage.setItem('daex-printer-width', e.target.value));
+  $('#printer-profile').addEventListener('change', e => localStorage.setItem('daex-print-profile', e.target.value));
   $('#sync-pending').addEventListener('click', syncPendingSales);
   $('#product-search').addEventListener('input', renderPDV);
   $('#checkout').addEventListener('click', checkout);

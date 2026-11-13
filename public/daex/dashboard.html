@@ -21,8 +21,12 @@
       <button data-route="reports" class="nav-item">Relatórios</button>
     </nav>
     <div class="sidebar-bottom">
-      <label class="compact-label">Impressora
-        <select id="printer-width"><option value="58">58 mm</option><option value="80">80 mm</option></select>
+      <label class="compact-label">Perfil de impressão
+        <select id="printer-profile">
+          <option value="card60">Papel de cartão — 60% / esquerda</option>
+          <option value="58">58 mm normal</option>
+          <option value="80">80 mm normal</option>
+        </select>
       </label>
       <button id="sync-pending" class="btn subtle full">Sincronizar pendências <span id="pending-count">0</span></button>
       <button id="logout" class="btn subtle full">Sair</button>
