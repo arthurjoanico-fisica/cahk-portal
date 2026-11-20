@@ -1,32 +1,49 @@
-# CAHK Portal v6.0 — Sistema Completo
+# CAHK Portal
 
-Esta versão consolida o portal público e a área de gestão do CAHK.
+Portal público e área de gestão do Centro Acadêmico Hugo Kremer — https://cahk.app
 
-Principais módulos:
-- Portal público CAHK com modo claro/escuro e busca global
-- Rádio CAHK
-- Loja e encomendas
-- Caixa/PDV e fiado
-- Entrada detalhada de estoque, custo médio, lote e validade
-- Inventário físico com conferência e ajuste opcional
-- Relatórios e exportação CSV
-- Fluxo MLTN/POD com Drive, produção, etiqueta e rastreio
-- Biblioteca Virtual por disciplina
-- Projetos de Física / Iniciação Científica
-- Vida no Campus: RU + Intercampi
-- Agenda pública
-- Avisos do CAHK
-- Transparência e documentos públicos
-- Usuários, funções e permissões
-- Auditoria administrativa
-- Backup JSON pela Gestão
-- SEO/social preview e PWA instalável
+A versão publicada aparece em `public/build.txt` (também em https://cahk.app/build.txt).
 
-O backend Supabase correspondente já foi preparado.
+## O que vai ao ar
 
-Build esperado: CAHK Portal build 6.0-sistema-completo
+O deploy é automático na Cloudflare a cada commit na `main` e publica **somente**:
 
+- `public/` — o site inteiro, uma pasta por módulo
+- `worker/` — Worker da Cloudflare (Arena CAHK)
+- `wrangler.jsonc` — configuração do Worker
 
-## Arena CAHK
+Todo o resto do repositório (`docs/`, `tests/`, `scripts/`, `android/`, `supabase/`) não altera o site.
 
-Jogo com dois celulares e tela única em `/arena/`. Publicação e uso: [ARENA-PUBLICACAO.md](ARENA-PUBLICACAO.md).
+## Módulos (`public/`)
+
+| Pasta | O que é |
+| --- | --- |
+| `/` , `painel/`, `noticias/`, `agenda/`, `equipe/`, `historia/` | Portal público, avisos, agenda e institucional |
+| `radio/`, `musica/` | Rádio CAHK |
+| `loja/` | Loja e encomendas (fluxo MLTN/POD) |
+| `caixa/`, `gestao/` | Caixa/PDV, estoque, relatórios e área de gestão |
+| `daex/` | DAEX — vendas e eventos das entidades |
+| `grade/`, `disciplina/`, `minha-fisica/` | Hub acadêmico: grade da Física UFPR, página por disciplina e planejador pessoal |
+| `biblioteca/` | Biblioteca Virtual por disciplina |
+| `vida-campus/` | RU e Intercampi |
+| `denuncias/` | Canal de denúncias |
+| `transparencia/` | Documentos públicos |
+| `arena/` | Arena CAHK — jogo com dois celulares |
+| `instalar/`, `downloads/`, `qrcode/` | PWA, APK e QR Codes |
+
+## Outras pastas
+
+- `supabase/` — função `cahk-denuncias` e `setup-denuncias.sql`. As demais funções do projeto Supabase (`portal-public`, `physics-academic`, `management-admin`, `portal-admin` etc.) ainda não estão versionadas aqui.
+- `android/` — app Android (WebView) do portal.
+- `tests/` e `scripts/` — testes (`npm test`, depois de `npm install`) e utilitários da Arena.
+- `docs/guias/` — guias de instalação e uso (DAEX, denúncias, MLTN, APK, Arena).
+- `docs/historico/` — notas de versões antigas e arquivos que ficavam soltos na raiz. Não são publicados.
+
+## Comandos
+
+```
+npm install
+npm run dev           # wrangler dev
+npm test              # testes
+npm run deploy:check  # simula o deploy sem publicar
+```
